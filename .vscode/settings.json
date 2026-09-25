@@ -1,0 +1,20 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/Backend/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "./Backend",
+    "Backend"
+  ],
+  "python.autoComplete.extraPaths": [
+    "./Backend",
+    "Backend"
+  ],
+  "python.analysis.typeCheckingMode": "off",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "none",
+    "reportMissingModuleSource": "none",
+    "reportMissingImports": "none",
+    "reportAttributeAccessIssue": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportGeneralTypeIssues": "none"
+  }
+}

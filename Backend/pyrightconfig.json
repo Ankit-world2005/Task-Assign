@@ -1,0 +1,15 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    "."
+  ],
+  "typeCheckingMode": "off",
+  "reportMissingTypeStubs": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportUnknownMemberType": "none",
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}
