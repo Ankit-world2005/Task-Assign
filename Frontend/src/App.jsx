@@ -20,10 +20,10 @@ function AppContent() {
   // If session is being checked, show sleek portal loader
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#070c18' }}>
+      <div className="portal-loader">
         <div style={{ textAlign: 'center' }}>
           <div className="login-spinner" style={{ width: '44px', height: '44px', margin: '0 auto 16px auto', borderWidth: '3px' }} />
-          <div style={{ color: '#38bdf8', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.08em' }}>
+          <div className="portal-loader-text">
             AUTHENTICATING US24 PORTAL...
           </div>
         </div>
@@ -120,23 +120,10 @@ function AppContent() {
       <LoginModal />
 
       {/* Footer */}
-      <footer
-        style={{
-          borderTop: '1px solid var(--border-glass)',
-          padding: '1.5rem 2rem',
-          textAlign: 'center',
-          fontSize: '0.8rem',
-          color: 'var(--text-dim)',
-          background: 'rgba(7, 12, 24, 0.9)',
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <div>
-            <strong>US24 Solutions</strong> • Healthcare Provider Credentialing & Portal Operations Management
-          </div>
-          <div>
-            Django 5 REST API + React Vite SPA • PostgreSQL Enterprise Connected
-          </div>
+      <footer className="footer">
+        <div className="footer-inner">
+          <span>© {new Date().getFullYear()} US24 Solutions</span>
+          <span>Need access? Contact your administrator</span>
         </div>
       </footer>
     </div>

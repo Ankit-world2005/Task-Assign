@@ -12,9 +12,9 @@ const TASK_TYPE_CONFIG = {
     label: 'Credentialing',
     category: 'credentialing',
     icon: '🏥',
-    accent: '#8b5cf6',
-    accentBg: 'rgba(139, 92, 246, 0.15)',
-    accentBorder: 'rgba(139, 92, 246, 0.35)',
+    accent: '#7c3aed',
+    accentBg: 'rgba(124, 58, 237, 0.15)',
+    accentBorder: 'rgba(124, 58, 237, 0.35)',
     taskNameValue: 'Credentialing',
     description: 'Provider credentialing & payer enrollment task',
   },
@@ -22,9 +22,9 @@ const TASK_TYPE_CONFIG = {
     label: 'Portal Creation',
     category: 'portal_creation',
     icon: '🌐',
-    accent: '#06b6d4',
-    accentBg: 'rgba(6, 182, 212, 0.15)',
-    accentBorder: 'rgba(6, 182, 212, 0.35)',
+    accent: '#0284c7',
+    accentBg: 'rgba(2, 132, 199, 0.15)',
+    accentBorder: 'rgba(2, 132, 199, 0.35)',
     taskNameValue: 'Portal Creation',
     description: 'New portal account setup & provisioning task',
   },
@@ -32,9 +32,9 @@ const TASK_TYPE_CONFIG = {
     label: 'ERA / EFT',
     category: 'era_eft',
     icon: '💳',
-    accent: '#f59e0b',
-    accentBg: 'rgba(245, 158, 11, 0.15)',
-    accentBorder: 'rgba(245, 158, 11, 0.35)',
+    accent: '#d97706',
+    accentBg: 'rgba(217, 119, 6, 0.15)',
+    accentBorder: 'rgba(217, 119, 6, 0.35)',
     taskNameValue: 'ERA / EFT',
     description: 'Remittance advice & electronic fund transfer task',
   },
@@ -42,9 +42,9 @@ const TASK_TYPE_CONFIG = {
     label: 'Password Reset',
     category: 'password_reset',
     icon: '🔑',
-    accent: '#ef4444',
-    accentBg: 'rgba(239, 68, 68, 0.15)',
-    accentBorder: 'rgba(239, 68, 68, 0.35)',
+    accent: '#c9192e',
+    accentBg: 'rgba(201, 25, 46, 0.15)',
+    accentBorder: 'rgba(201, 25, 46, 0.35)',
     taskNameValue: 'Password Reset',
     description: 'Portal password recovery & credential update task',
   },
@@ -52,9 +52,9 @@ const TASK_TYPE_CONFIG = {
     label: 'Portal Unblock',
     category: 'portal_unblock',
     icon: '🔓',
-    accent: '#10b981',
-    accentBg: 'rgba(16, 185, 129, 0.15)',
-    accentBorder: 'rgba(16, 185, 129, 0.35)',
+    accent: '#16a34a',
+    accentBg: 'rgba(22, 163, 74, 0.15)',
+    accentBorder: 'rgba(22, 163, 74, 0.35)',
     taskNameValue: 'Portal Unblock',
     description: 'Unblock locked-out portal accounts task',
   },
@@ -264,7 +264,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                 {config.icon}
               </div>
               <div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
                   {config.label}
                   <span
                     style={{
@@ -290,14 +290,14 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
             </div>
             <div
               style={{
-                background: 'rgba(37, 99, 235, 0.15)',
-                border: '1px solid rgba(37, 99, 235, 0.3)',
+                background: 'rgba(10, 36, 99, 0.15)',
+                border: '1px solid rgba(10, 36, 99, 0.3)',
                 padding: '6px 14px',
                 borderRadius: 'var(--radius-full)',
-                color: '#60a5fa',
+                color: '#0648c0',
                 fontWeight: 700,
                 fontSize: '0.85rem',
-                fontFamily: 'monospace',
+                fontFamily: 'var(--mono)',
               }}
             >
               {formData.task_id || 'AUTO-ID'}
@@ -308,9 +308,9 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
         {successMsg && (
           <div
             style={{
-              background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#6ee7b7',
+              background: 'rgba(22, 163, 74, 0.15)',
+              border: '1px solid rgba(22, 163, 74, 0.3)',
+              color: '#15803d',
               padding: '12px 16px',
               borderRadius: 'var(--radius-sm)',
               marginBottom: '1.5rem',
@@ -327,9 +327,9 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
         {errorMsg && (
           <div
             style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#fca5a5',
+              background: 'rgba(201, 25, 46, 0.15)',
+              border: '1px solid rgba(201, 25, 46, 0.3)',
+              color: '#c9192e',
               padding: '12px 16px',
               borderRadius: 'var(--radius-sm)',
               marginBottom: '1.5rem',
@@ -357,7 +357,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                 <input
                   type="text"
                   className="compact-form-input"
-                  style={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.04em', color: '#38bdf8' }}
+                  style={{ fontFamily: 'var(--mono)', fontWeight: 700, letterSpacing: '0.04em', color: '#0648c0' }}
                   value={formData.task_id}
                   onChange={(e) => handleChange('task_id', e.target.value)}
                   placeholder="TSK-2026-XXX"
@@ -456,7 +456,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
           </div>
 
           {/* Submit Action Bar */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '0.75rem', borderTop: '1px solid rgba(11, 13, 16, 0.08)' }}>
             <button
               type="button"
               className="btn-secondary"
@@ -474,9 +474,6 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                 justifyContent: 'center',
                 padding: '7px 18px',
                 fontSize: '0.84rem',
-                background: loading ? undefined : config.accentBg,
-                borderColor: config.accentBorder,
-                color: loading ? undefined : config.accent,
               }}
             >
               {loading ? 'Assigning...' : `✓ Assign ${config.label} Task`}
@@ -504,7 +501,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
           }}
         >
           <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>{config.icon}</span> {config.label} — Assigned Tasks
               <span
                 style={{

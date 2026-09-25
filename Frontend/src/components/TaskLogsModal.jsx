@@ -499,7 +499,7 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
               {currentTask.task_id}
             </span>
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>
+              <h3 style={{ fontSize: '1.15rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.2 }}>
                 {currentTask.task_name || currentTask.project_name}
               </h3>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -822,12 +822,12 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                       <div className="spec-label">PTAN Identifiers</div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {currentTask.group_ptan && (
-                          <span className="channel-pill" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+                          <span className="channel-pill" style={{ background: 'rgba(6, 72, 192, 0.15)', color: '#0648c0' }}>
                             G: {currentTask.group_ptan}
                           </span>
                         )}
                         {currentTask.individual_ptan && (
-                          <span className="channel-pill" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
+                          <span className="channel-pill" style={{ background: 'rgba(22, 163, 74, 0.15)', color: '#15803d' }}>
                             P: {currentTask.individual_ptan}
                           </span>
                         )}

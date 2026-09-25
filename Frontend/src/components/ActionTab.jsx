@@ -204,7 +204,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 className="emp-profile-avatar-lg"
                 style={{
                   background: isUnassignedView
-                    ? '#64748b'
+                    ? '#555b63'
                     : activeStaff.profile?.avatar_color || '#2563eb',
                 }}
               >
@@ -217,7 +217,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.2 }}>
                     {isUnassignedView ? 'Unassigned Task Queue' : activeStaff.full_name || activeStaff.username}
                   </h1>
                   {currentUser?.id === activeStaff.id && (
@@ -230,7 +230,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
                   {!isUnassignedView && (
                     <>
-                      <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'var(--brand-cyan-light)', fontWeight: 700 }}>
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: '0.82rem', color: 'var(--brand-cyan-light)', fontWeight: 700 }}>
                         {activeStaff.profile?.employee_id || `EMP-${activeStaff.id}`}
                       </span>
                       <span style={{ color: 'var(--text-dim)' }}>•</span>
@@ -367,7 +367,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
               }}
             >
               <div style={{ fontSize: '2rem', marginBottom: '10px' }}>📋</div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#ffffff', marginBottom: '6px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
                 No Tasks Found
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', maxWidth: '440px', margin: '0 auto 1.25rem auto' }}>
@@ -402,7 +402,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                         {task.category === 'portal_creation' && 'Portal Creation'}
                         {!['era_eft', 'credentialing', 'portal_creation'].includes(task.category) && (task.category || 'General')}
                       </span>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
                         {task.task_name || task.project_name}
                       </h3>
                     </div>
@@ -416,7 +416,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                   <div className="emp-task-details-grid">
                     <div>
                       <div className="emp-task-field-label">Project / Clinic</div>
-                      <div className="emp-task-field-val" style={{ color: '#ffffff', fontWeight: 600 }}>
+                      <div className="emp-task-field-val" style={{ color: 'var(--ink)', fontWeight: 600 }}>
                         {task.project_name}
                       </div>
                     </div>
@@ -442,7 +442,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                     {(task.group_ptan || task.individual_ptan) && (
                       <div>
                         <div className="emp-task-field-label">PTAN Numbers</div>
-                        <div className="emp-task-field-val" style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>
+                        <div className="emp-task-field-val" style={{ fontFamily: 'var(--mono)', fontSize: '0.78rem' }}>
                           {task.group_ptan ? `G: ${task.group_ptan}` : ''} {task.individual_ptan ? `| P: ${task.individual_ptan}` : ''}
                         </div>
                       </div>
@@ -473,8 +473,8 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
 
                     <div>
                       <div className="emp-task-field-label">MOC (Channel)</div>
-                      <div className="emp-task-field-val" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                        <span style={{ textTransform: 'capitalize', color: '#38bdf8', fontWeight: 600 }}>
+                      <div className="emp-task-field-val" style={{ fontFamily: 'var(--mono)', fontSize: '0.8rem' }}>
+                        <span style={{ textTransform: 'capitalize', color: '#0648c0', fontWeight: 600 }}>
                           {task.follow_up_type || 'Portal'}:
                         </span>{' '}
                         {task.follow_up_value || 'Direct'}
@@ -495,11 +495,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                       style={{
                         fontSize: '0.78rem',
                         color: 'var(--text-muted)',
-                        background: 'rgba(255, 255, 255, 0.02)',
+                        background: 'rgba(11, 13, 16, 0.02)',
                         padding: '8px 12px',
                         borderRadius: 'var(--radius-sm)',
                         marginBottom: '10px',
-                        borderLeft: '3px solid rgba(56, 189, 248, 0.4)',
+                        borderLeft: '3px solid rgba(6, 72, 192, 0.4)',
                       }}
                     >
                       <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}>
@@ -561,10 +561,10 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
             }}
           >
             <div>
-              <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--brand-cyan-light)', fontWeight: 700, marginBottom: '4px' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--brand-cyan-light)', fontWeight: 700, marginBottom: '4px' }}>
                 TEAM WORKLOAD & ASSIGNMENTS
               </div>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+              <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.2 }}>
                 Staff Tasks Directory
               </h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.86rem', marginTop: '4px' }}>
@@ -688,7 +688,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
 
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
                               {user.full_name || user.username}
                             </h3>
                             {isCurrentUser && (
@@ -699,11 +699,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-                            <span style={{ fontFamily: 'monospace', fontSize: '0.74rem', color: 'var(--brand-cyan-light)', fontWeight: 700 }}>
+                            <span style={{ fontFamily: 'var(--mono)', fontSize: '0.74rem', color: 'var(--brand-cyan-light)', fontWeight: 700 }}>
                               {user.profile?.employee_id || `EMP-${user.id}`}
                             </span>
                             <span style={{ color: 'var(--text-dim)', fontSize: '0.74rem' }}>•</span>
-                            <span style={{ fontSize: '0.72rem', color: user.profile?.role === 'admin' ? '#fbbf24' : 'var(--text-muted)', fontWeight: 500 }}>
+                            <span style={{ fontSize: '0.72rem', color: user.profile?.role === 'admin' ? '#b45309' : 'var(--text-muted)', fontWeight: 500 }}>
                               {user.profile?.role === 'admin' ? 'Administrator' : 'Staff Associate'}
                             </span>
                           </div>
@@ -713,11 +713,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                       {/* Total Task Count Pill */}
                       <span
                         style={{
-                          background: 'rgba(37, 99, 235, 0.2)',
-                          border: '1px solid rgba(37, 99, 235, 0.35)',
+                          background: 'rgba(10, 36, 99, 0.2)',
+                          border: '1px solid rgba(10, 36, 99, 0.35)',
                           borderRadius: 'var(--radius-full)',
                           padding: '4px 10px',
-                          color: '#60a5fa',
+                          color: '#0648c0',
                           fontSize: '0.75rem',
                           fontWeight: 700,
                           whiteSpace: 'nowrap',
@@ -760,11 +760,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div className="staff-dir-avatar" style={{ background: '#64748b' }}>
+                      <div className="staff-dir-avatar" style={{ background: '#555b63' }}>
                         ?
                       </div>
                       <div>
-                        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
                           Unassigned Tasks
                         </h3>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '3px' }}>
@@ -775,11 +775,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
 
                     <span
                       style={{
-                        background: 'rgba(239, 68, 68, 0.2)',
-                        border: '1px solid rgba(239, 68, 68, 0.35)',
+                        background: 'rgba(201, 25, 46, 0.2)',
+                        border: '1px solid rgba(201, 25, 46, 0.35)',
                         borderRadius: 'var(--radius-full)',
                         padding: '4px 10px',
-                        color: '#f87171',
+                        color: '#c9192e',
                         fontSize: '0.75rem',
                         fontWeight: 700,
                       }}

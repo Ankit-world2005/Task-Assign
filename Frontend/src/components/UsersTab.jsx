@@ -220,7 +220,7 @@ export const UsersTab = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <span style={{ fontSize: '1.6rem' }}>👥</span>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
               Portal User Management & Access Control
             </h1>
             <span style={{
@@ -228,9 +228,9 @@ export const UsersTab = () => {
               fontWeight: 700,
               padding: '3px 8px',
               borderRadius: '6px',
-              background: 'rgba(56, 189, 248, 0.15)',
-              color: '#38bdf8',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              background: 'rgba(6, 72, 192, 0.15)',
+              color: '#0648c0',
+              border: '1px solid rgba(6, 72, 192, 0.3)',
               letterSpacing: '0.05em'
             }}>
               ADMIN PRIVILEGE ONLY
@@ -274,9 +274,9 @@ export const UsersTab = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            background: feedback.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.18)',
-            border: feedback.type === 'success' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
-            color: feedback.type === 'success' ? '#6ee7b7' : '#fca5a5',
+            background: feedback.type === 'success' ? 'rgba(22, 163, 74, 0.15)' : 'rgba(201, 25, 46, 0.18)',
+            border: feedback.type === 'success' ? '1px solid rgba(22, 163, 74, 0.4)' : '1px solid rgba(201, 25, 46, 0.4)',
+            color: feedback.type === 'success' ? '#15803d' : '#c9192e',
             fontSize: '0.92rem',
             animation: 'fadeIn 0.2s ease-in-out'
           }}
@@ -295,11 +295,11 @@ export const UsersTab = () => {
 
       {/* KPI Metric Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #38bdf8' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #0648c0' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
             Total Registered Users
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', marginTop: '6px' }}>
+          <div style={{ fontSize: '2rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', marginTop: '6px' }}>
             {totalUsers}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -307,11 +307,11 @@ export const UsersTab = () => {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #10b981' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #16a34a' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
             Active Login Access
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399', marginTop: '6px' }}>
+          <div style={{ fontSize: '2rem', fontFamily: 'var(--serif)', fontWeight: 400, color: '#16a34a', marginTop: '6px' }}>
             {activeUsers}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -319,11 +319,11 @@ export const UsersTab = () => {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #ef4444' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #c9192e' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
             Access Revoked (Blocked)
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f87171', marginTop: '6px' }}>
+          <div style={{ fontSize: '2rem', fontFamily: 'var(--serif)', fontWeight: 400, color: '#c9192e', marginTop: '6px' }}>
             {revokedUsers}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -331,11 +331,11 @@ export const UsersTab = () => {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #a855f7' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', borderLeft: '4px solid #7c3aed' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
             Security Model
           </div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#c084fc', marginTop: '10px' }}>
+          <div style={{ fontSize: '1.2rem', fontFamily: 'var(--serif)', fontWeight: 400, color: '#7e22ce', marginTop: '10px' }}>
             Two-Step 2FA / OTP
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -403,13 +403,13 @@ export const UsersTab = () => {
         <div style={{ overflowX: 'auto' }}>
           <table className="app-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: 'rgba(15, 23, 42, 0.75)', borderBottom: '1px solid var(--border-glass)' }}>
-                <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Details</th>
-                <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contact Info</th>
-                <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</th>
-                <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Portal Role</th>
-                <th style={{ padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Login Access Status</th>
-                <th style={{ padding: '14px 18px', textAlign: 'right', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Access Actions</th>
+              <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border-glass)' }}>
+                <th style={{ fontFamily: 'var(--mono)', padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User Details</th>
+                <th style={{ fontFamily: 'var(--mono)', padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contact Info</th>
+                <th style={{ fontFamily: 'var(--mono)', padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</th>
+                <th style={{ fontFamily: 'var(--mono)', padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Portal Role</th>
+                <th style={{ fontFamily: 'var(--mono)', padding: '14px 18px', textAlign: 'left', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Login Access Status</th>
+                <th style={{ fontFamily: 'var(--mono)', padding: '14px 18px', textAlign: 'right', fontSize: '0.78rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Access Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -417,7 +417,7 @@ export const UsersTab = () => {
                 <tr>
                   <td colSpan="6" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                     <div style={{ fontSize: '2rem', marginBottom: '8px' }}>👤</div>
-                    <div style={{ fontWeight: 600, fontSize: '1rem', color: '#fff' }}>No users match the search filters.</div>
+                    <div style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--ink)' }}>No users match the search filters.</div>
                     <div style={{ fontSize: '0.84rem', marginTop: '4px' }}>Try adjusting your search terms or filters.</div>
                   </td>
                 </tr>
@@ -431,8 +431,8 @@ export const UsersTab = () => {
                     <tr
                       key={u.id}
                       style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        background: !u.is_active ? 'rgba(239, 68, 68, 0.03)' : 'transparent',
+                        borderBottom: '1px solid rgba(11, 13, 16, 0.05)',
+                        background: !u.is_active ? 'rgba(201, 25, 46, 0.03)' : 'transparent',
                         transition: 'background 0.15s ease'
                       }}
                     >
@@ -451,20 +451,20 @@ export const UsersTab = () => {
                               color: '#fff',
                               fontSize: '0.95rem',
                               backgroundColor: u.profile?.avatar_color || '#2563eb',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                              boxShadow: '0 1px 2px rgba(11, 13, 16, 0.15)',
                               flexShrink: 0
                             }}
                           >
                             {avatarLetter}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--ink)', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               {u.full_name || u.username}
                               {isSelf && (
                                 <span style={{
                                   fontSize: '0.65rem',
-                                  background: 'rgba(56, 189, 248, 0.2)',
-                                  color: '#38bdf8',
+                                  background: 'rgba(6, 72, 192, 0.2)',
+                                  color: '#0648c0',
                                   padding: '1px 6px',
                                   borderRadius: '4px',
                                   fontWeight: 700
@@ -484,7 +484,7 @@ export const UsersTab = () => {
 
                       {/* Contact Column */}
                       <td style={{ padding: '14px 18px' }}>
-                        <div style={{ fontSize: '0.86rem', color: '#e2e8f0' }}>{u.email}</div>
+                        <div style={{ fontSize: '0.86rem', color: '#0b0d10' }}>{u.email}</div>
                         <div style={{ fontSize: '0.76rem', color: 'var(--text-dim)', marginTop: '2px' }}>
                           {u.profile?.phone || 'No phone set'}
                         </div>
@@ -494,11 +494,11 @@ export const UsersTab = () => {
                       <td style={{ padding: '14px 18px' }}>
                         <span style={{
                           fontSize: '0.8rem',
-                          color: '#94a3b8',
-                          background: 'rgba(255, 255, 255, 0.04)',
+                          color: '#555b63',
+                          background: 'rgba(11, 13, 16, 0.04)',
                           padding: '3px 8px',
                           borderRadius: '4px',
-                          border: '1px solid rgba(255, 255, 255, 0.08)'
+                          border: '1px solid rgba(11, 13, 16, 0.08)'
                         }}>
                           {u.profile?.department || 'Operations'}
                         </span>
@@ -512,12 +512,13 @@ export const UsersTab = () => {
                             fontWeight: 700,
                             padding: '3px 10px',
                             borderRadius: '999px',
-                            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.2))',
-                            color: '#fbbf24',
-                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                            background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(234, 88, 12, 0.2))',
+                            color: '#b45309',
+                            border: '1px solid rgba(217, 119, 6, 0.4)',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            whiteSpace: 'nowrap'
                           }}>
                             👑 Administrator
                           </span>
@@ -527,12 +528,13 @@ export const UsersTab = () => {
                             fontWeight: 600,
                             padding: '3px 10px',
                             borderRadius: '999px',
-                            background: 'rgba(56, 189, 248, 0.1)',
-                            color: '#7dd3fc',
-                            border: '1px solid rgba(56, 189, 248, 0.25)',
+                            background: 'rgba(6, 72, 192, 0.1)',
+                            color: '#0369a1',
+                            border: '1px solid rgba(6, 72, 192, 0.25)',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            whiteSpace: 'nowrap'
                           }}>
                             👤 Staff Member
                           </span>
@@ -542,13 +544,13 @@ export const UsersTab = () => {
                       {/* Access Status Column */}
                       <td style={{ padding: '14px 18px' }}>
                         {u.is_active ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '4px 10px', borderRadius: '999px', color: '#34d399', fontSize: '0.78rem', fontWeight: 600 }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(22, 163, 74, 0.12)', border: '1px solid rgba(22, 163, 74, 0.3)', padding: '4px 10px', borderRadius: '999px', color: '#15803d', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16a34a', display: 'inline-block' }} />
                             Access Active
                           </div>
                         ) : (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '4px 10px', borderRadius: '999px', color: '#f87171', fontSize: '0.78rem', fontWeight: 600 }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block' }} />
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(201, 25, 46, 0.12)', border: '1px solid rgba(201, 25, 46, 0.35)', padding: '4px 10px', borderRadius: '999px', color: '#c9192e', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#c9192e', display: 'inline-block' }} />
                             Access Revoked
                           </div>
                         )}
@@ -570,9 +572,9 @@ export const UsersTab = () => {
                               fontWeight: 600,
                               cursor: isSelf ? 'not-allowed' : 'pointer',
                               opacity: isSelf ? 0.45 : 1,
-                              background: u.is_active ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.15)',
-                              border: u.is_active ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(16, 185, 129, 0.4)',
-                              color: u.is_active ? '#fca5a5' : '#6ee7b7',
+                              background: u.is_active ? 'rgba(201, 25, 46, 0.12)' : 'rgba(22, 163, 74, 0.15)',
+                              border: u.is_active ? '1px solid rgba(201, 25, 46, 0.35)' : '1px solid rgba(22, 163, 74, 0.4)',
+                              color: u.is_active ? '#c9192e' : '#15803d',
                               transition: 'all 0.15s ease'
                             }}
                           >
@@ -590,7 +592,7 @@ export const UsersTab = () => {
                               borderRadius: '6px',
                               fontSize: '0.78rem',
                               fontWeight: 500,
-                              background: 'rgba(255, 255, 255, 0.05)',
+                              background: 'rgba(11, 13, 16, 0.05)',
                               border: '1px solid var(--border-glass)',
                               color: 'var(--text-light)',
                               cursor: 'pointer'
@@ -613,7 +615,7 @@ export const UsersTab = () => {
                               borderRadius: '6px',
                               fontSize: '0.78rem',
                               fontWeight: 500,
-                              background: 'rgba(255, 255, 255, 0.05)',
+                              background: 'rgba(11, 13, 16, 0.05)',
                               border: '1px solid var(--border-glass)',
                               color: 'var(--text-light)',
                               cursor: 'pointer'
@@ -633,9 +635,9 @@ export const UsersTab = () => {
                                 padding: '5px 8px',
                                 borderRadius: '6px',
                                 fontSize: '0.78rem',
-                                background: 'rgba(239, 68, 68, 0.08)',
-                                border: '1px solid rgba(239, 68, 68, 0.25)',
-                                color: '#f87171',
+                                background: 'rgba(201, 25, 46, 0.08)',
+                                border: '1px solid rgba(201, 25, 46, 0.25)',
+                                color: '#c9192e',
                                 cursor: 'pointer'
                               }}
                             >
@@ -671,7 +673,7 @@ export const UsersTab = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
                   Create New Portal User Access
                 </h2>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
@@ -797,7 +799,7 @@ export const UsersTab = () => {
 
               {/* Login Access Granted Checkbox */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.04)',
+                background: 'rgba(11, 13, 16, 0.04)',
                 border: '1px solid var(--border-glass)',
                 padding: '12px 16px',
                 borderRadius: 'var(--radius-sm)',
@@ -811,9 +813,9 @@ export const UsersTab = () => {
                   id="create-is-active"
                   checked={createForm.is_active}
                   onChange={(e) => setCreateForm({ ...createForm, is_active: e.target.checked })}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#38bdf8' }}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#0648c0' }}
                 />
-                <label htmlFor="create-is-active" style={{ cursor: 'pointer', fontSize: '0.86rem', color: '#e2e8f0' }}>
+                <label htmlFor="create-is-active" style={{ cursor: 'pointer', fontSize: '0.86rem', color: '#0b0d10' }}>
                   <strong>Grant immediate login access to portal</strong>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     If unchecked, this user will be registered in revoked status and blocked until enabled.
@@ -859,7 +861,7 @@ export const UsersTab = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h2 style={{ fontSize: '1.3rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
                   Edit User Profile: @{editingUser.username}
                 </h2>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
@@ -975,7 +977,7 @@ export const UsersTab = () => {
 
               {/* Login Access Status Toggle */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.04)',
+                background: 'rgba(11, 13, 16, 0.04)',
                 border: '1px solid var(--border-glass)',
                 padding: '12px 16px',
                 borderRadius: 'var(--radius-sm)',
@@ -990,12 +992,12 @@ export const UsersTab = () => {
                   checked={editingUser.is_active}
                   disabled={currentUser?.id === editingUser.id}
                   onChange={(e) => setEditingUser({ ...editingUser, is_active: e.target.checked })}
-                  style={{ width: '18px', height: '18px', cursor: currentUser?.id === editingUser.id ? 'not-allowed' : 'pointer', accentColor: '#10b981' }}
+                  style={{ width: '18px', height: '18px', cursor: currentUser?.id === editingUser.id ? 'not-allowed' : 'pointer', accentColor: '#16a34a' }}
                 />
-                <label htmlFor="edit-is-active" style={{ cursor: 'pointer', fontSize: '0.86rem', color: '#e2e8f0' }}>
+                <label htmlFor="edit-is-active" style={{ cursor: 'pointer', fontSize: '0.86rem', color: '#0b0d10' }}>
                   <strong>Portal Login Access: {editingUser.is_active ? 'Active (Allowed)' : 'Revoked (Blocked)'}</strong>
                   {currentUser?.id === editingUser.id && (
-                    <div style={{ fontSize: '0.74rem', color: '#f59e0b' }}>
+                    <div style={{ fontSize: '0.74rem', color: '#d97706' }}>
                       (You cannot revoke your own administrator account)
                     </div>
                   )}
@@ -1040,7 +1042,7 @@ export const UsersTab = () => {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                <h2 style={{ fontSize: '1.25rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
                   Reset Login Password
                 </h2>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>

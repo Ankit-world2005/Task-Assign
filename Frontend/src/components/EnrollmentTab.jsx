@@ -412,8 +412,8 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
               width: '46px',
               height: '46px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(6, 182, 212, 0.25))',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              background: 'linear-gradient(135deg, rgba(10, 36, 99, 0.25), rgba(2, 132, 199, 0.25))',
+              border: '1px solid rgba(6, 72, 192, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -424,17 +424,18 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+              <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
                 {currentMeta.title}
               </h2>
               <span
                 style={{
+                  fontFamily: 'var(--mono)',
                   fontSize: '0.74rem',
                   padding: '3px 10px',
                   borderRadius: 'var(--radius-full)',
-                  background: 'rgba(56, 189, 248, 0.15)',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
-                  color: '#38bdf8',
+                  background: 'rgba(6, 72, 192, 0.15)',
+                  border: '1px solid rgba(6, 72, 192, 0.35)',
+                  color: '#0648c0',
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
@@ -590,7 +591,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
               <tbody>
                 {tasks.map((task) => (
                   <tr key={task.id}>
-                    <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#60a5fa' }}>
+                    <td style={{ fontFamily: 'var(--mono)', fontWeight: 700, color: '#0648c0' }}>
                       {task.task_id}
                     </td>
 
@@ -601,21 +602,21 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                     </td>
 
                     <td>
-                      <div style={{ fontWeight: 600, color: '#fff' }}>{task.project_name}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{task.project_name}</div>
                     </td>
 
                     <td>
-                      <div style={{ fontWeight: 600, color: '#ffffff' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
                         {task.provider_name || '—'}
                       </div>
                       {(task.group_ptan || task.individual_ptan) && (
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', fontFamily: 'var(--mono)' }}>
                           {task.group_ptan ? `G: ${task.group_ptan}` : ''} {task.individual_ptan ? `| P: ${task.individual_ptan}` : ''}
                         </div>
                       )}
                     </td>
 
-                    <td style={{ color: '#38bdf8', fontWeight: 500 }}>
+                    <td style={{ color: '#0648c0', fontWeight: 500 }}>
                       {task.insurance_name}
                     </td>
 
@@ -624,7 +625,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                     </td>
 
                     <td>
-                      <span style={{ color: '#ffffff' }}>👤 {task.assignee_name || 'Unassigned'}</span>
+                      <span style={{ color: 'var(--ink)' }}>👤 {task.assignee_name || 'Unassigned'}</span>
                     </td>
 
                     <td>
@@ -663,17 +664,17 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
               padding: '1.5rem 1.75rem',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.85)',
+              boxShadow: 'var(--shadow-pop)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
               <div>
-                <div style={{ fontSize: '0.70rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--brand-cyan-light)', fontWeight: 700 }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: '0.70rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--brand-cyan-light)', fontWeight: 700 }}>
                   {newFormData.category === 'portal_creation' ? 'PAYER / CLEARINGHOUSE PORTAL SETUP' : 'PROVIDER CREDENTIALING ENROLLMENT'}
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: '2px 0 0 0' }}>
+                <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', margin: '2px 0 0 0' }}>
                   {newFormData.category === 'portal_creation' ? 'New Portal Creation Task' : 'New Credentialing Enrollment Task'}
                 </h3>
               </div>
@@ -710,12 +711,12 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                   <div className="compact-form-group">
                     <label className="compact-form-label">
                       <span>Task ID</span>
-                      <span style={{ fontSize: '0.68rem', color: '#38bdf8', fontWeight: 600 }}>Auto Unique</span>
+                      <span style={{ fontSize: '0.68rem', color: '#0648c0', fontWeight: 600 }}>Auto Unique</span>
                     </label>
                     <input
                       type="text"
                       className="compact-form-input"
-                      style={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: '0.04em', color: '#38bdf8' }}
+                      style={{ fontFamily: 'var(--mono)', fontWeight: 700, letterSpacing: '0.04em', color: '#0648c0' }}
                       placeholder="TSK-2026-XXX"
                       value={newFormData.task_id}
                       onChange={(e) => setNewFormData((p) => ({ ...p, task_id: e.target.value }))}
@@ -770,7 +771,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                           style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#38bdf8',
+                            color: '#0648c0',
                             fontSize: '0.72rem',
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -982,7 +983,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                           gap: '4px',
                           cursor: 'pointer',
                           fontSize: '0.70rem',
-                          color: '#38bdf8',
+                          color: '#0648c0',
                           fontWeight: 500,
                         }}
                       >
@@ -1033,8 +1034,8 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                               padding: '6px 11px',
                               border: 'none',
                               borderRight: '1px solid var(--border-glass)',
-                              background: isSelected ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.03)',
-                              color: isSelected ? '#38bdf8' : 'var(--text-muted)',
+                              background: isSelected ? 'rgba(2, 132, 199, 0.25)' : 'rgba(11, 13, 16, 0.03)',
+                              color: isSelected ? '#0648c0' : 'var(--text-muted)',
                               cursor: 'pointer',
                               fontWeight: isSelected ? 700 : 500,
                               fontSize: '0.78rem',
@@ -1084,7 +1085,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
               </div>
 
               {/* Submit / Cancel Footer Action Bar */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '0.5rem', borderTop: '1px solid rgba(11, 13, 16, 0.08)' }}>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -1120,7 +1121,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+              <h3 style={{ fontSize: '1.2rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)' }}>
                 📤 Import Enrollment Tasks (Excel)
               </h3>
               <button
@@ -1151,12 +1152,12 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                 padding: '2rem',
                 textAlign: 'center',
                 cursor: 'pointer',
-                background: 'rgba(255, 255, 255, 0.02)',
+                background: 'rgba(11, 13, 16, 0.02)',
                 marginBottom: '1rem',
               }}
             >
               <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📊</div>
-              <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.92rem' }}>
+              <div style={{ fontWeight: 600, color: 'var(--ink)', fontSize: '0.92rem' }}>
                 Click to browse or drop Excel file here
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px' }}>
@@ -1165,7 +1166,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
             </div>
 
             {importing && (
-              <div style={{ textAlign: 'center', color: '#38bdf8', fontSize: '0.85rem', marginBottom: '10px' }}>
+              <div style={{ textAlign: 'center', color: '#0648c0', fontSize: '0.85rem', marginBottom: '10px' }}>
                 Importing spreadsheet records into database...
               </div>
             )}
@@ -1176,8 +1177,8 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                   padding: '10px',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '0.85rem',
-                  background: importMsg.includes('success') ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: importMsg.includes('success') ? '#34d399' : '#fca5a5',
+                  background: importMsg.includes('success') ? 'rgba(22, 163, 74, 0.15)' : 'rgba(201, 25, 46, 0.15)',
+                  color: importMsg.includes('success') ? '#15803d' : '#c9192e',
                   marginBottom: '1rem',
                 }}
               >

@@ -111,7 +111,7 @@ export const ImagePasteRemarks = ({
       {/* Label and Quick Attach Trigger */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px 8px', marginBottom: '5px' }}>
         <label className="form-label" style={{ margin: 0, fontSize: '0.73rem', whiteSpace: 'nowrap' }}>
-          {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+          {label} {required && <span style={{ color: '#c9192e' }}>*</span>}
         </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
           <span style={{ fontSize: '0.68rem', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
@@ -121,10 +121,10 @@ export const ImagePasteRemarks = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             style={{
-              background: 'rgba(56, 189, 248, 0.1)',
-              border: '1px solid rgba(56, 189, 248, 0.25)',
+              background: 'rgba(6, 72, 192, 0.1)',
+              border: '1px solid rgba(6, 72, 192, 0.25)',
               borderRadius: '4px',
-              color: '#38bdf8',
+              color: '#0648c0',
               fontSize: '0.72rem',
               fontWeight: 600,
               cursor: 'pointer',
@@ -159,7 +159,7 @@ export const ImagePasteRemarks = ({
         style={{
           position: 'relative',
           borderRadius: 'var(--radius-sm)',
-          border: isDragging ? '2px dashed #38bdf8' : 'none',
+          border: isDragging ? '2px dashed #0648c0' : 'none',
           transition: 'all 0.2s ease',
         }}
       >
@@ -179,12 +179,12 @@ export const ImagePasteRemarks = ({
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(6, 182, 212, 0.25)',
+              background: 'rgba(2, 132, 199, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: 'var(--radius-sm)',
-              color: '#ffffff',
+              color: 'var(--navy)',
               fontWeight: 700,
               fontSize: '0.9rem',
               pointerEvents: 'none',
@@ -202,8 +202,8 @@ export const ImagePasteRemarks = ({
             marginTop: '6px',
             padding: '6px 10px',
             borderRadius: 'var(--radius-sm)',
-            background: 'rgba(15, 23, 42, 0.85)',
-            border: '1px solid rgba(56, 189, 248, 0.35)',
+            background: 'var(--surface-2)',
+            border: '1px solid rgba(6, 72, 192, 0.35)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -218,7 +218,7 @@ export const ImagePasteRemarks = ({
                 height: '38px',
                 borderRadius: '5px',
                 overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(11, 13, 16, 0.2)',
                 cursor: 'pointer',
                 flexShrink: 0,
               }}
@@ -231,13 +231,13 @@ export const ImagePasteRemarks = ({
               />
             </div>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>📷 Screenshot Attached</span>
                 <span
                   style={{
                     fontSize: '0.66rem',
-                    background: 'rgba(56, 189, 248, 0.2)',
-                    color: '#38bdf8',
+                    background: 'rgba(6, 72, 192, 0.2)',
+                    color: '#0648c0',
                     padding: '1px 5px',
                     borderRadius: '3px',
                     fontWeight: 700,
@@ -253,7 +253,7 @@ export const ImagePasteRemarks = ({
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#38bdf8',
+                    color: '#0648c0',
                     padding: 0,
                     cursor: 'pointer',
                     textDecoration: 'underline',
@@ -270,9 +270,9 @@ export const ImagePasteRemarks = ({
             type="button"
             onClick={() => onImageChange && onImageChange(null)}
             style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-              color: '#f87171',
+              background: 'rgba(201, 25, 46, 0.15)',
+              border: '1px solid rgba(201, 25, 46, 0.35)',
+              color: '#c9192e',
               padding: '3px 8px',
               borderRadius: '4px',
               fontSize: '0.74rem',
@@ -290,7 +290,7 @@ export const ImagePasteRemarks = ({
       {showLightbox && image && (
         <div
           className="modal-overlay"
-          style={{ zIndex: 10000, background: 'rgba(0, 0, 0, 0.88)' }}
+          style={{ zIndex: 10000, background: 'rgba(11, 13, 16, 0.6)' }}
           onClick={() => setShowLightbox(false)}
         >
           <div
@@ -298,14 +298,14 @@ export const ImagePasteRemarks = ({
               position: 'relative',
               maxWidth: '90vw',
               maxHeight: '90vh',
-              background: '#0a0f1d',
+              background: 'var(--surface)',
               border: '1px solid var(--border-glass)',
               borderRadius: '12px',
               padding: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.9)',
+              boxShadow: 'var(--shadow-pop)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -317,10 +317,10 @@ export const ImagePasteRemarks = ({
                 alignItems: 'center',
                 paddingBottom: '8px',
                 marginBottom: '8px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                borderBottom: '1px solid rgba(11, 13, 16,0.1)',
               }}
             >
-              <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff' }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--ink)' }}>
                 📷 Attached Image Preview
               </span>
               <button
@@ -372,8 +372,8 @@ export const RemarksDisplay = ({ remarks = '', attachment = null }) => {
               gap: '8px',
               padding: '4px 8px',
               borderRadius: '6px',
-              background: 'rgba(6, 182, 212, 0.12)',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              background: 'rgba(2, 132, 199, 0.12)',
+              border: '1px solid rgba(6, 72, 192, 0.3)',
               cursor: 'pointer',
             }}
             title="Click to zoom image"
@@ -388,7 +388,7 @@ export const RemarksDisplay = ({ remarks = '', attachment = null }) => {
                 borderRadius: '4px',
               }}
             />
-            <span style={{ fontSize: '0.74rem', color: '#38bdf8', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.74rem', color: '#0648c0', fontWeight: 600 }}>
               📷 Attached Screenshot 🔍
             </span>
           </div>
@@ -396,7 +396,7 @@ export const RemarksDisplay = ({ remarks = '', attachment = null }) => {
           {showLightbox && (
             <div
               className="modal-overlay"
-              style={{ zIndex: 10000, background: 'rgba(0, 0, 0, 0.88)' }}
+              style={{ zIndex: 10000, background: 'rgba(11, 13, 16, 0.6)' }}
               onClick={() => setShowLightbox(false)}
             >
               <div
@@ -404,7 +404,7 @@ export const RemarksDisplay = ({ remarks = '', attachment = null }) => {
                   position: 'relative',
                   maxWidth: '90vw',
                   maxHeight: '90vh',
-                  background: '#0a0f1d',
+                  background: 'var(--surface)',
                   border: '1px solid var(--border-glass)',
                   borderRadius: '12px',
                   padding: '12px',
@@ -422,10 +422,10 @@ export const RemarksDisplay = ({ remarks = '', attachment = null }) => {
                     alignItems: 'center',
                     paddingBottom: '8px',
                     marginBottom: '8px',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    borderBottom: '1px solid rgba(11, 13, 16,0.1)',
                   }}
                 >
-                  <span style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff' }}>
+                  <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--ink)' }}>
                     📷 Attached Image View
                   </span>
                   <button

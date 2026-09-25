@@ -87,7 +87,7 @@ export const LoginModal = () => {
           >
             US24
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
+          <h2 style={{ fontSize: '1.5rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)' }}>
             US24 SOLUTIONS PORTAL
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -98,9 +98,9 @@ export const LoginModal = () => {
         {error && (
           <div
             style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#fca5a5',
+              background: 'rgba(201, 25, 46, 0.15)',
+              border: '1px solid rgba(201, 25, 46, 0.3)',
+              color: '#c9192e',
               padding: '10px 14px',
               borderRadius: 'var(--radius-sm)',
               fontSize: '0.85rem',
@@ -151,18 +151,18 @@ export const LoginModal = () => {
           <form onSubmit={handleOtpSubmit}>
             <div
               style={{
-                background: 'rgba(56, 189, 248, 0.1)',
-                border: '1px solid rgba(56, 189, 248, 0.25)',
+                background: 'rgba(6, 72, 192, 0.1)',
+                border: '1px solid rgba(6, 72, 192, 0.25)',
                 padding: '12px',
                 borderRadius: 'var(--radius-sm)',
                 marginBottom: '1.25rem',
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
+              <div style={{ fontSize: '0.8rem', color: '#0648c0' }}>
                 A 6-digit OTP code has been dispatched to:
               </div>
-              <div style={{ fontWeight: 600, color: '#38bdf8', fontSize: '0.9rem', marginTop: '2px' }}>
+              <div style={{ fontWeight: 600, color: '#0648c0', fontSize: '0.9rem', marginTop: '2px' }}>
                 {phoneInfo}
               </div>
               {serverOtp && (
@@ -170,8 +170,8 @@ export const LoginModal = () => {
                   style={{
                     marginTop: '8px',
                     fontSize: '0.82rem',
-                    color: '#a7f3d0',
-                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: '#15803d',
+                    background: 'rgba(22, 163, 74, 0.15)',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     cursor: 'pointer',

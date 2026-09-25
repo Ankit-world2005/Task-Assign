@@ -344,7 +344,7 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '8px', marginBottom: '1rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '1.3rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>{currentCategoryConfig?.icon}</span>
                   <span>{currentCategoryConfig?.title} Tasks</span>
                 </h2>
@@ -473,7 +473,7 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
                       {task.follow_up_due_date && (
                         <div className="task-detail-row">
                           <span className="task-detail-label">Next Follow-Up:</span>
-                          <span className="task-detail-val" style={isFollowUpOverdue(task) ? { color: '#fb923c', fontWeight: 700 } : undefined}>
+                          <span className="task-detail-val" style={isFollowUpOverdue(task) ? { color: '#c2410c', fontWeight: 700 } : undefined}>
                             {formatDate(task.follow_up_due_date)}{isFollowUpOverdue(task) ? ' (Overdue)' : ''}
                           </span>
                         </div>

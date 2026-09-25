@@ -146,226 +146,310 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="login-viewport-wrapper">
-      {/* Dynamic Background Glow Elements */}
-      <div className="login-ambient-orb orb-1" />
-      <div className="login-ambient-orb orb-2" />
-      <div className="login-ambient-orb orb-3" />
-
-      <div className="login-card-container">
-        {/* Portal Branding Top Header */}
-        <div className="login-header">
-          <div className="login-brand-badge">
-            <span className="brand-pill">US24</span>
-            <span className="brand-dot" />
-            <span className="brand-portal-name">HEALTHCARE OPERATIONS</span>
-          </div>
-
-          <h1 className="login-title">
-            {step === 1 ? 'Portal Administrator Sign In' : 'Two-Step Verification'}
-          </h1>
-          <p className="login-subtitle">
-            {step === 1
-              ? 'Provider Credentialing, Operations & Task Workflow Platform'
-              : `A 6-digit one-time passcode was dispatched to ${email}`}
-          </p>
-
-          {/* 2-Step Progress Indicator */}
-          <div className="login-step-tracker">
-            <div className={`step-node ${step >= 1 ? 'active' : ''}`}>
-              <span className="step-num">{step > 1 ? '✓' : '1'}</span>
-              <span className="step-text">Credentials</span>
-            </div>
-            <div className={`step-connector ${step === 2 ? 'active' : ''}`} />
-            <div className={`step-node ${step === 2 ? 'active' : ''}`}>
-              <span className="step-num">2</span>
-              <span className="step-text">Gmail OTP</span>
-            </div>
+    <div className="page login-page">
+      {/* Top navigation bar */}
+      <nav className="nav">
+        <div className="nav-inner">
+          <span className="logo">
+            <span className="logo-mark">
+              <span>U<span className="orange">S</span>24</span>
+            </span>
+            <span className="wordmark">
+              <span className="wordmark-name">U<span className="orange">S</span>24 SOLUTIONS</span>
+              <span className="tagline">Innovative Technology Driven</span>
+            </span>
+          </span>
+          <div className="nav-right">
+            <span className="nav-link hide-sm">Employee Portal</span>
           </div>
         </div>
+      </nav>
 
-        {/* Global Error Banner */}
-        {error && (
-          <div className="login-error-banner animate-fade-in">
-            <div className="error-icon">⚠️</div>
-            <div className="error-text">{error}</div>
+      <main className="main">
+        {/* Intro */}
+        <section className="intro">
+          <span className="eyebrow">
+            <span className="dot" aria-hidden="true" />
+            Internal access · Employees only
+          </span>
+          <h1 className="headline">
+            Your workspace,{' '}
+            <span className="mark">
+              signed <span className="orange">in.</span>
+            </span>
+          </h1>
+          <p className="lede">
+            Sign in with your company email to reach internal tools, resources and your team dashboard.
+          </p>
+          <div className="facts">
+            <div className="fact">
+              <div className="k">Access</div>
+              <div className="v">Role-based</div>
+            </div>
+            <div className="fact">
+              <div className="k">Sign-in</div>
+              <div className="v">2-step OTP</div>
+            </div>
+            <div className="fact">
+              <div className="k">Account</div>
+              <div className="v">Work email</div>
+            </div>
           </div>
-        )}
+        </section>
 
-        {/* STEP 1: CREDENTIALS FORM */}
-        {step === 1 && (
-          <form onSubmit={handleCredentialSubmit} className="login-form">
-            {/* Email / Username Field */}
-            <div className="login-form-group">
-              <label className="login-field-label">Email or Username</label>
-              <div className="login-input-wrapper">
-                <span className="input-prefix-icon">📧</span>
-                <input
-                  type="text"
-                  className="login-text-input"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="username"
-                  required
-                />
+        {/* Sign-in card */}
+        <div className="card">
+          <div className="card-head">
+            <span className="card-head-label">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Employee account
+            </span>
+            <span className="secure">Secure</span>
+          </div>
+
+          <div className="card-body">
+            <h2>{step === 1 ? 'Sign in' : 'Two-Step Verification'}</h2>
+            <p className="sub">
+              {step === 1
+                ? 'Enter your company email and password.'
+                : `A 6-digit one-time passcode was dispatched to ${email}`}
+            </p>
+
+            {/* 2-Step Progress Indicator */}
+            <div className="step-tracker">
+              <div className={`step-node ${step >= 1 ? 'active' : ''}`}>
+                <span className="step-num">{step > 1 ? '✓' : '1'}</span>
+                <span className="step-text">Credentials</span>
+              </div>
+              <div className={`step-connector ${step === 2 ? 'active' : ''}`} />
+              <div className={`step-node ${step === 2 ? 'active' : ''}`}>
+                <span className="step-num">2</span>
+                <span className="step-text">Gmail OTP</span>
               </div>
             </div>
 
-            {/* Password Field */}
-            <div className="login-form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="login-field-label">Password</label>
-                <button
-                  type="button"
-                  className="login-ghost-link"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? 'Hide' : 'Show'} Password
-                </button>
-              </div>
-              <div className="login-input-wrapper">
-                <span className="input-prefix-icon">🔒</span>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="login-text-input"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Submit Action */}
-            <button
-              type="submit"
-              className="login-primary-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="btn-loading-flex">
-                  <span className="login-spinner" /> Validating & Dispatching OTP...
-                </span>
-              ) : (
-                <span>Continue to Two-Step Verification ➜</span>
-              )}
-            </button>
-
-            {/* Security Compliance Footer */}
-            <div className="login-security-notice">
-              <div className="security-item">
-                <span className="sec-icon">🛡️</span> HIPAA & SOC-2 Encrypted
-              </div>
-              <div className="security-item">
-                <span className="sec-icon">⚡</span> 2-Step OTP Protected
-              </div>
-            </div>
-          </form>
-        )}
-
-        {/* STEP 2: 6-DIGIT OTP VERIFICATION FORM */}
-        {step === 2 && (
-          <div className="login-otp-step animate-fade-in">
-            {/* Email Dispatch Notice */}
-            <div className="otp-dispatch-banner">
-              <div className="banner-icon">📩</div>
-              <div className="banner-details">
-                <div className="banner-title">
-                  {serverData?.email_sent ? 'Email Dispatched to Gmail' : 'Security OTP Generated'}
-                </div>
-                <div className="banner-sub">
-                  Code sent to <strong>{serverData?.email || email}</strong>. Check your inbox or spam folder.
-                </div>
-              </div>
-            </div>
-
-            {/* Dev Fallback Helper Chip */}
-            {serverData?.otp && (
-              <div className="dev-otp-helper-card">
-                <div className="dev-otp-info">
-                  <span className="dev-tag">Developer / Local Test Code:</span>
-                  <span className="dev-code-val">{serverData.otp}</span>
-                </div>
-                <button
-                  type="button"
-                  className="dev-fill-btn"
-                  onClick={() => handleDevOtpAutofill(serverData.otp)}
-                >
-                  ⚡ Auto-Fill & Verify
-                </button>
+            {/* Global Error Banner */}
+            {error && (
+              <div className="alert" role="alert">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: '1px' }} aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
-            {/* 6 Individual Digit Inputs */}
-            <div className="otp-boxes-wrapper" onPaste={handlePaste}>
-              {otpDigits.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => (digitInputRefs.current[index] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={1}
-                  className={`otp-box-digit ${digit ? 'filled' : ''}`}
-                  value={digit}
-                  onChange={(e) => handleDigitChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  autoComplete="one-time-code"
-                />
-              ))}
-            </div>
+            {/* STEP 1: CREDENTIALS FORM */}
+            {step === 1 && (
+              <form onSubmit={handleCredentialSubmit}>
+                {/* Email / Username Field */}
+                <div className="field">
+                  <label htmlFor="login-page-email">Email or Username</label>
+                  <div className="input-wrap">
+                    <svg className="lead" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-10 6L2 7" />
+                    </svg>
+                    <input
+                      id="login-page-email"
+                      type="text"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="username"
+                      required
+                    />
+                  </div>
+                </div>
 
-            {/* Verify Action Button */}
-            <button
-              type="button"
-              className="login-primary-btn"
-              onClick={() => handleOtpVerification()}
-              disabled={loading || otpDigits.join('').length !== 6}
-            >
-              {loading ? (
-                <span className="btn-loading-flex">
-                  <span className="login-spinner" /> Verifying OTP & Loading Dashboard...
-                </span>
-              ) : (
-                <span>Verify & Launch Dashboard ✓</span>
-              )}
-            </button>
+                {/* Password Field */}
+                <div className="field">
+                  <label htmlFor="login-page-password">Password</label>
+                  <div className="input-wrap">
+                    <svg className="lead" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input
+                      id="login-page-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="eye"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-            {/* Resend OTP & Return Options */}
-            <div className="otp-actions-footer">
-              <button
-                type="button"
-                className="otp-resend-btn"
-                disabled={resendCooldown > 0 || loading}
-                onClick={handleCredentialSubmit}
-              >
-                {resendCooldown > 0
-                  ? `Resend Code in ${resendCooldown}s`
-                  : 'Resend Verification Code'}
-              </button>
+                {/* Submit Action */}
+                <button type="submit" className="btn" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <span className="spinner" />
+                      <span>Validating & Dispatching OTP...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign in</span>
+                      <svg className="arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
 
-              <button
-                type="button"
-                className="otp-back-link"
-                onClick={() => {
-                  setStep(1);
-                  setError('');
-                  setOtpDigits(['', '', '', '', '', '']);
-                }}
-              >
-                ← Back to Credentials
-              </button>
-            </div>
+            {/* STEP 2: 6-DIGIT OTP VERIFICATION FORM */}
+            {step === 2 && (
+              <div className="animate-fade-in">
+                {/* Email Dispatch Notice */}
+                <div className="otp-notice">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="m22 7-10 6L2 7" />
+                  </svg>
+                  <div>
+                    <div className="otp-notice-title">
+                      {serverData?.email_sent ? 'Email Dispatched to Gmail' : 'Security OTP Generated'}
+                    </div>
+                    <div className="otp-notice-sub">
+                      Code sent to <strong>{serverData?.email || email}</strong>. Check your inbox or spam folder.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dev Fallback Helper Chip */}
+                {serverData?.otp && (
+                  <div className="dev-otp-helper-card">
+                    <div className="dev-otp-info">
+                      <span className="dev-tag">Developer / Local Test Code:</span>
+                      <span className="dev-code-val">{serverData.otp}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="dev-fill-btn"
+                      onClick={() => handleDevOtpAutofill(serverData.otp)}
+                    >
+                      ⚡ Auto-Fill & Verify
+                    </button>
+                  </div>
+                )}
+
+                {/* 6 Individual Digit Inputs */}
+                <div className="otp-boxes-wrapper" onPaste={handlePaste}>
+                  {otpDigits.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => (digitInputRefs.current[index] = el)}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={1}
+                      className={`otp-box-digit ${digit ? 'filled' : ''}`}
+                      value={digit}
+                      onChange={(e) => handleDigitChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      autoComplete="one-time-code"
+                      aria-label={`Digit ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Verify Action Button */}
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => handleOtpVerification()}
+                  disabled={loading || otpDigits.join('').length !== 6}
+                >
+                  {loading ? (
+                    <>
+                      <span className="spinner" />
+                      <span>Verifying OTP & Loading Dashboard...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Verify & Launch Dashboard</span>
+                      <svg className="arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+
+                {/* Resend OTP & Return Options */}
+                <div className="otp-actions-footer">
+                  <button
+                    type="button"
+                    className="link"
+                    disabled={resendCooldown > 0 || loading}
+                    onClick={handleCredentialSubmit}
+                  >
+                    {resendCooldown > 0
+                      ? `Resend Code in ${resendCooldown}s`
+                      : 'Resend Verification Code'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="link muted"
+                    onClick={() => {
+                      setStep(1);
+                      setError('');
+                      setOtpDigits(['', '', '', '', '', '']);
+                    }}
+                  >
+                    ← Back to Credentials
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          <div className="card-foot">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Authorized US24 employees only. Activity may be monitored.
+          </div>
+        </div>
+      </main>
 
       {/* Footer Branding */}
-      <div className="login-footer-copy">
-        US24 Solutions Inc. • Healthcare Credentialing Operations Management
-      </div>
+      <footer className="footer">
+        <div className="footer-inner">
+          <span>© {new Date().getFullYear()} US24 Solutions</span>
+          <span>Need access? Contact your administrator</span>
+        </div>
+      </footer>
     </div>
   );
 };

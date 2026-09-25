@@ -164,10 +164,10 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
           <div className="cat-segmented-bar-wrapper">
             <div className="cat-segmented-bar">
               {[
-                { key: 'portal_creation', color: '#06b6d4', count: categories.portal_creation || 0, label: 'Portal' },
-                { key: 'credentialing', color: '#3b82f6', count: categories.credentialing || 0, label: 'Credentialing' },
-                { key: 'era_eft', color: '#10b981', count: categories.era_eft || 0, label: 'ERA/EFT' },
-                { key: 'general', color: '#8b5cf6', count: categories.general || 0, label: 'General' },
+                { key: 'portal_creation', color: '#0284c7', count: categories.portal_creation || 0, label: 'Portal' },
+                { key: 'credentialing', color: '#0648c0', count: categories.credentialing || 0, label: 'Credentialing' },
+                { key: 'era_eft', color: '#16a34a', count: categories.era_eft || 0, label: 'ERA/EFT' },
+                { key: 'general', color: '#7c3aed', count: categories.general || 0, label: 'General' },
               ].map((c) => {
                 const pct = kpis.total > 0 ? (c.count / kpis.total) * 100 : 0;
                 if (pct <= 0) return null;
@@ -185,9 +185,9 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
               })}
             </div>
             <div className="cat-legend-row">
-              <span className="cat-legend-dot"><span className="dot" style={{ background: '#06b6d4' }} />Portal (52%)</span>
-              <span className="cat-legend-dot"><span className="dot" style={{ background: '#3b82f6' }} />Credentialing (29%)</span>
-              <span className="cat-legend-dot"><span className="dot" style={{ background: '#10b981' }} />ERA/EFT (19%)</span>
+              <span className="cat-legend-dot"><span className="dot" style={{ background: '#0284c7' }} />Portal (52%)</span>
+              <span className="cat-legend-dot"><span className="dot" style={{ background: '#0648c0' }} />Credentialing (29%)</span>
+              <span className="cat-legend-dot"><span className="dot" style={{ background: '#16a34a' }} />ERA/EFT (19%)</span>
             </div>
           </div>
 
@@ -199,32 +199,32 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                 key: 'portal_creation',
                 icon: '🌐',
                 desc: 'Payer web registrations, Navinet & Availity setups',
-                color: '#06b6d4',
-                bgColor: 'rgba(6, 182, 212, 0.12)',
+                color: '#0284c7',
+                bgColor: 'rgba(2, 132, 199, 0.12)',
               },
               {
                 label: 'Provider Credentialing',
                 key: 'credentialing',
                 icon: '🏥',
                 desc: 'CAQH profile management & board enrollments',
-                color: '#3b82f6',
-                bgColor: 'rgba(59, 130, 246, 0.12)',
+                color: '#0648c0',
+                bgColor: 'rgba(6, 72, 192, 0.12)',
               },
               {
                 label: 'ERA / EFT Direct Pay',
                 key: 'era_eft',
                 icon: '💳',
                 desc: 'Electronic remittance & bank payment linkages',
-                color: '#10b981',
-                bgColor: 'rgba(16, 185, 129, 0.12)',
+                color: '#16a34a',
+                bgColor: 'rgba(22, 163, 74, 0.12)',
               },
               {
                 label: 'General Practice Tasks',
                 key: 'general',
                 icon: '📋',
                 desc: 'Provider inquiries & supporting documentation',
-                color: '#8b5cf6',
-                bgColor: 'rgba(139, 92, 246, 0.12)',
+                color: '#7c3aed',
+                bgColor: 'rgba(124, 58, 237, 0.12)',
               },
             ].map((cat) => {
               const count = categories[cat.key] || 0;
@@ -268,7 +268,7 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                       style={{
                         width: `${pct}%`,
                         backgroundColor: cat.color,
-                        boxShadow: `0 0 10px ${cat.color}66`,
+                        boxShadow: 'none',
                       }}
                     />
                   </div>
@@ -444,13 +444,13 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
               padding: '1.75rem',
               maxHeight: '85vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+              boxShadow: 'var(--shadow-pop)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '1rem' }}>
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff' }}>
+                <h3 style={{ fontSize: '1.2rem', fontFamily: 'var(--serif)', fontWeight: 400, color: 'var(--ink)' }}>
                   Tasks Assigned to {activeEmployeeModal.name}
                 </h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -481,7 +481,7 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                   <div
                     key={task.id}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
+                      background: 'rgba(11, 13, 16, 0.02)',
                       border: '1px solid var(--border-glass)',
                       borderRadius: 'var(--radius-sm)',
                       padding: '10px 14px',
@@ -493,10 +493,10 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                   >
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem', color: 'var(--brand-cyan-light)' }}>
+                        <span style={{ fontFamily: 'var(--mono)', fontWeight: 700, fontSize: '0.8rem', color: 'var(--brand-cyan-light)' }}>
                           {task.task_id}
                         </span>
-                        <span style={{ fontSize: '0.84rem', color: '#ffffff', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.84rem', color: 'var(--ink)', fontWeight: 600 }}>
                           {task.task_name || task.category}
                         </span>
                       </div>
