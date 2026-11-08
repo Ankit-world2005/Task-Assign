@@ -7,6 +7,14 @@
 
 import { formatDate, formatDateTime, formatTime } from './dateFormat';
 
+/** Escapes saved text before it goes into a print page, so it shows as text and never runs as HTML. */
+const esc = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+/** Only pasted / attached images (base64 data:image URLs) are allowed as image sources. */
+const safeImageSrc = (value) =>
+  typeof value === 'string' && /^data:image\/(png|jpe?g|gif|webp|bmp);base64,[a-z0-9+/=\s]+$/i.test(value) ? value : '';
+
 /**
  * Core print engine: creates a hidden iframe, writes HTML content,
  * waits for rendering and media loading, and invokes the print dialog.
@@ -256,7 +264,7 @@ export const printTaskAuditReport = (task, logs = [], currentUser = null) => {
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>US24 Task Report - ${task.task_id}</title>
+      <title>US24 Task Report - ${esc(task.task_id)}</title>
       <style>
         ${getBasePrintStyles('portrait')}
         .spec-table th { width: 22%; background: #f8fafc; color: #475569; }
@@ -270,19 +278,19 @@ export const printTaskAuditReport = (task, logs = [], currentUser = null) => {
           <div class="brand-sub">Healthcare Operations & Provider Credentialing</div>
         </div>
         <div class="report-meta">
-          <div><strong>Task Code:</strong> <span style="font-family: monospace; font-weight: bold; color: #0284c7;">${task.task_id}</span></div>
-          <div><strong>Date:</strong> ${dateFormatted}</div>
-          <div><strong>Printed By:</strong> ${currentUser?.full_name || currentUser?.username || 'Staff'}</div>
+          <div><strong>Task Code:</strong> <span style="font-family: monospace; font-weight: bold; color: #0284c7;">${esc(task.task_id)}</span></div>
+          <div><strong>Date:</strong> ${esc(dateFormatted)}</div>
+          <div><strong>Printed By:</strong> ${esc(currentUser?.full_name || currentUser?.username || 'Staff')}</div>
         </div>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px;">
         <div>
-          <div style="font-size: 15px; font-weight: 800; color: #0f172a;">${task.task_name || task.project_name}</div>
-          <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Project: <strong>${task.project_name}</strong> • Insurance: <strong>${task.insurance_name}</strong></div>
+          <div style="font-size: 15px; font-weight: 800; color: #0f172a;">${esc(task.task_name || task.project_name)}</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Project: <strong>${esc(task.project_name)}</strong> • Insurance: <strong>${esc(task.insurance_name)}</strong></div>
         </div>
         <div style="text-align: right;">
-          <span class="status-badge ${getStatusClass(task.status)}">${task.status || 'Pending'}</span>
+          <span class="status-badge ${getStatusClass(task.status)}">${esc(task.status || 'Pending')}</span>
         </div>
       </div>
 
@@ -290,24 +298,24 @@ export const printTaskAuditReport = (task, logs = [], currentUser = null) => {
       <table class="spec-table">
         <tr>
           <th>Project Name</th>
-          <td><strong>${task.project_name || '-'}</strong></td>
+          <td><strong>${esc(task.project_name || '-')}</strong></td>
           <th>Insurance / Payer</th>
-          <td><strong style="color: #0284c7;">${task.insurance_name || '-'}</strong></td>
+          <td><strong style="color: #0284c7;">${esc(task.insurance_name || '-')}</strong></td>
         </tr>
         <tr>
           <th>Provider Name</th>
-          <td>${task.provider_name || 'N/A'}</td>
+          <td>${esc(task.provider_name || 'N/A')}</td>
           <th>Early Start Date</th>
-          <td>${formatDate(task.early_start_date, 'N/A')}</td>
+          <td>${esc(formatDate(task.early_start_date, 'N/A'))}</td>
         </tr>
         <tr>
           <th>Provider Effective Date</th>
-          <td>${formatDate(task.provider_effective_date, 'N/A')}</td>
+          <td>${esc(formatDate(task.provider_effective_date, 'N/A'))}</td>
           <th>PTAN Identifiers</th>
           <td>
-            ${task.group_ptan ? `<strong>G:</strong> ${task.group_ptan}` : ''}
+            ${task.group_ptan ? `<strong>G:</strong> ${esc(task.group_ptan)}` : ''}
             ${task.group_ptan && task.individual_ptan ? ' | ' : ''}
-            ${task.individual_ptan ? `<strong>P:</strong> ${task.individual_ptan}` : ''}
+            ${task.individual_ptan ? `<strong>P:</strong> ${esc(task.individual_ptan)}` : ''}
             ${!task.group_ptan && !task.individual_ptan ? 'None' : ''}
           </td>
         </tr>
@@ -317,26 +325,26 @@ export const printTaskAuditReport = (task, logs = [], currentUser = null) => {
             ${task.category === 'credentialing' ? 'Provider Credentialing' : ''}
             ${task.category === 'portal_creation' ? 'Portal Creation & Setup' : ''}
             ${task.category === 'era_eft' ? 'ERA / EFT Direct Pay' : ''}
-            ${!['credentialing', 'portal_creation', 'era_eft'].includes(task.category) ? (task.category || 'General') : ''}
+            ${!['credentialing', 'portal_creation', 'era_eft'].includes(task.category) ? esc(task.category || 'General') : ''}
           </td>
           <th>Sub-Plan</th>
-          <td>${task.sub_plan || 'Standard Plan'}</td>
+          <td>${esc(task.sub_plan || 'Standard Plan')}</td>
         </tr>
         <tr>
           <th>Current Assignee</th>
-          <td>👤 ${task.assignee_name || 'Unassigned'}</td>
+          <td>👤 ${esc(task.assignee_name || 'Unassigned')}</td>
           <th>Creation Date</th>
-          <td>${formatDate(task.creation_date, '-')}</td>
+          <td>${esc(formatDate(task.creation_date, '-'))}</td>
         </tr>
         <tr>
           <th>MOC (Communication)</th>
-          <td colspan="3">${task.follow_up_type || 'Portal'}: ${task.follow_up_value || 'None provided'}</td>
+          <td colspan="3">${esc(task.follow_up_type || 'Portal')}: ${esc(task.follow_up_value || 'None provided')}</td>
         </tr>
         <tr>
           <th>Initial Remarks</th>
           <td colspan="3">
-            <div>${task.notes || 'No notes provided.'}</div>
-            ${task.attachment ? `<img class="attachment-preview" src="${task.attachment}" alt="Attached Document / Proof" />` : ''}
+            <div>${esc(task.notes || 'No notes provided.')}</div>
+            ${safeImageSrc(task.attachment) ? `<img class="attachment-preview" src="${safeImageSrc(task.attachment)}" alt="Attached Document / Proof" />` : ''}
           </td>
         </tr>
       </table>
@@ -361,13 +369,13 @@ export const printTaskAuditReport = (task, logs = [], currentUser = null) => {
           ` : logs.map((log, idx) => `
             <tr>
               <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
-              <td>${formatDate(log.created_at)}<br/>${formatTime(log.created_at)}</td>
-              <td><strong>${log.updated_by_name || 'Staff Member'}</strong></td>
-              <td><span class="status-badge ${getStatusClass(log.new_status || log.status)}">${log.new_status || log.status || task.status}</span></td>
-              <td>${log.reassigned_to_name ? `👤 ${log.reassigned_to_name}` : '-'}</td>
+              <td>${esc(formatDate(log.created_at))}<br/>${esc(formatTime(log.created_at))}</td>
+              <td><strong>${esc(log.updated_by_name || 'Staff Member')}</strong></td>
+              <td><span class="status-badge ${getStatusClass(log.new_status || log.status)}">${esc(log.new_status || log.status || task.status)}</span></td>
+              <td>${log.reassigned_to_name ? `👤 ${esc(log.reassigned_to_name)}` : '-'}</td>
               <td>
-                <div>${log.remarks || 'Status updated.'}</div>
-                ${log.attachment ? `<img class="attachment-preview" src="${log.attachment}" alt="Update attachment" />` : ''}
+                <div>${esc(log.remarks || 'Status updated.')}</div>
+                ${safeImageSrc(log.attachment) ? `<img class="attachment-preview" src="${safeImageSrc(log.attachment)}" alt="Update attachment" />` : ''}
               </td>
             </tr>
           `).join('')}
@@ -435,9 +443,9 @@ export const printEnrollmentsReport = (tasks = [], category = 'all', statusFilte
           <div class="brand-sub">Healthcare Operations • Enrollments Directory Report</div>
         </div>
         <div class="report-meta">
-          <div><strong>Generated:</strong> ${dateFormatted}</div>
-          <div><strong>Category:</strong> ${(category || 'All').toUpperCase()} • <strong>Filter:</strong> ${statusFilter.toUpperCase()}</div>
-          <div><strong>Printed By:</strong> ${currentUser?.full_name || 'Administrator'}</div>
+          <div><strong>Generated:</strong> ${esc(dateFormatted)}</div>
+          <div><strong>Category:</strong> ${esc((category || 'All').toUpperCase())} • <strong>Filter:</strong> ${esc(statusFilter.toUpperCase())}</div>
+          <div><strong>Printed By:</strong> ${esc(currentUser?.full_name || 'Administrator')}</div>
         </div>
       </div>
 
@@ -482,23 +490,23 @@ export const printEnrollmentsReport = (tasks = [], category = 'all', statusFilte
             </tr>
           ` : tasks.map((t) => `
             <tr>
-              <td style="font-family: monospace; font-weight: bold; color: #0369a1;">${t.task_id}</td>
-              <td><strong>${t.project_name}</strong>${t.task_name ? `<br/><span style="color:#64748b; font-size: 9.5px;">${t.task_name}</span>` : ''}</td>
+              <td style="font-family: monospace; font-weight: bold; color: #0369a1;">${esc(t.task_id)}</td>
+              <td><strong>${esc(t.project_name)}</strong>${t.task_name ? `<br/><span style="color:#64748b; font-size: 9.5px;">${esc(t.task_name)}</span>` : ''}</td>
               <td style="font-size: 9.5px;">
-                ${t.category === 'credentialing' ? 'Credentialing' : t.category === 'portal_creation' ? 'Portal Setup' : t.category === 'era_eft' ? 'ERA / EFT' : (t.category || 'General')}
+                ${t.category === 'credentialing' ? 'Credentialing' : t.category === 'portal_creation' ? 'Portal Setup' : t.category === 'era_eft' ? 'ERA / EFT' : esc(t.category || 'General')}
               </td>
-              <td><strong>${t.insurance_name}</strong></td>
-              <td>${t.provider_name || '-'}</td>
+              <td><strong>${esc(t.insurance_name)}</strong></td>
+              <td>${esc(t.provider_name || '-')}</td>
               <td style="font-family: monospace; font-size: 9px;">
-                ${t.group_ptan ? `G: ${t.group_ptan}` : ''}
+                ${t.group_ptan ? `G: ${esc(t.group_ptan)}` : ''}
                 ${t.group_ptan && t.individual_ptan ? '<br/>' : ''}
-                ${t.individual_ptan ? `P: ${t.individual_ptan}` : ''}
+                ${t.individual_ptan ? `P: ${esc(t.individual_ptan)}` : ''}
                 ${!t.group_ptan && !t.individual_ptan ? '-' : ''}
               </td>
-              <td>${formatDate(t.early_start_date, '-')}</td>
-              <td><span class="status-badge ${getStatusClass(t.status)}">${t.status}</span></td>
-              <td>${t.assignee_name || 'Unassigned'}</td>
-              <td style="font-size: 9.5px;">${t.follow_up_type || 'Portal'}${t.follow_up_value ? `: ${t.follow_up_value}` : ''}</td>
+              <td>${esc(formatDate(t.early_start_date, '-'))}</td>
+              <td><span class="status-badge ${getStatusClass(t.status)}">${esc(t.status)}</span></td>
+              <td>${esc(t.assignee_name || 'Unassigned')}</td>
+              <td style="font-size: 9.5px;">${esc(t.follow_up_type || 'Portal')}${t.follow_up_value ? `: ${esc(t.follow_up_value)}` : ''}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -543,7 +551,7 @@ export const printStaffQueueReport = (staffUser, tasks = [], statusFilter = 'all
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>US24 Staff Work Queue - ${staffName}</title>
+      <title>US24 Staff Work Queue - ${esc(staffName)}</title>
       <style>
         ${getBasePrintStyles('portrait')}
         .staff-hero {
@@ -581,15 +589,15 @@ export const printStaffQueueReport = (staffUser, tasks = [], statusFilter = 'all
           <div class="brand-sub">Healthcare Operations • Assigned Work Queue</div>
         </div>
         <div class="report-meta">
-          <div><strong>Date:</strong> ${dateFormatted}</div>
-          <div><strong>Printed By:</strong> ${currentUser?.full_name || 'Staff'}</div>
+          <div><strong>Date:</strong> ${esc(dateFormatted)}</div>
+          <div><strong>Printed By:</strong> ${esc(currentUser?.full_name || 'Staff')}</div>
         </div>
       </div>
 
       <div class="staff-hero">
         <div>
-          <div class="staff-hero-name">👤 ${staffName}</div>
-          <div class="staff-hero-sub">ID: <strong>${employeeId}</strong> • Role: <strong>${staffRole}</strong> • Email: ${staffUser?.email || 'N/A'}</div>
+          <div class="staff-hero-name">👤 ${esc(staffName)}</div>
+          <div class="staff-hero-sub">ID: <strong>${esc(employeeId)}</strong> • Role: <strong>${esc(staffRole)}</strong> • Email: ${esc(staffUser?.email || 'N/A')}</div>
         </div>
         <div class="metrics-grid">
           <div class="metric-cell">
@@ -632,14 +640,14 @@ export const printStaffQueueReport = (staffUser, tasks = [], statusFilter = 'all
             </tr>
           ` : tasks.map((t) => `
             <tr>
-              <td style="font-family: monospace; font-weight: bold; color: #0284c7;">${t.task_id}</td>
-              <td><strong>${t.project_name}</strong>${t.task_name ? `<br/><span style="color:#64748b; font-size: 9px;">${t.task_name}</span>` : ''}</td>
-              <td><strong>${t.insurance_name}</strong></td>
-              <td>${t.provider_name || '-'}</td>
-              <td style="font-size: 9.5px;">${t.category === 'credentialing' ? 'Credentialing' : t.category === 'portal_creation' ? 'Portal Setup' : t.category === 'era_eft' ? 'ERA / EFT' : (t.category || 'General')}</td>
-              <td><span class="status-badge ${getStatusClass(t.status)}">${t.status}</span></td>
-              <td>${formatDate(t.early_start_date, '-')}</td>
-              <td style="font-size: 9.5px;">${t.follow_up_type || 'Portal'}: ${t.follow_up_value || '-'}</td>
+              <td style="font-family: monospace; font-weight: bold; color: #0284c7;">${esc(t.task_id)}</td>
+              <td><strong>${esc(t.project_name)}</strong>${t.task_name ? `<br/><span style="color:#64748b; font-size: 9px;">${esc(t.task_name)}</span>` : ''}</td>
+              <td><strong>${esc(t.insurance_name)}</strong></td>
+              <td>${esc(t.provider_name || '-')}</td>
+              <td style="font-size: 9.5px;">${t.category === 'credentialing' ? 'Credentialing' : t.category === 'portal_creation' ? 'Portal Setup' : t.category === 'era_eft' ? 'ERA / EFT' : esc(t.category || 'General')}</td>
+              <td><span class="status-badge ${getStatusClass(t.status)}">${esc(t.status)}</span></td>
+              <td>${esc(formatDate(t.early_start_date, '-'))}</td>
+              <td style="font-size: 9.5px;">${esc(t.follow_up_type || 'Portal')}: ${esc(t.follow_up_value || '-')}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -701,8 +709,8 @@ export const printDashboardReport = (kpis = {}, categories = {}, assignees = [],
           <div class="brand-sub">Healthcare Operations • Executive Dashboard Summary</div>
         </div>
         <div class="report-meta">
-          <div><strong>Generated:</strong> ${dateFormatted}</div>
-          <div><strong>Printed By:</strong> ${currentUser?.full_name || currentUser?.username || 'Administrator'}</div>
+          <div><strong>Generated:</strong> ${esc(dateFormatted)}</div>
+          <div><strong>Printed By:</strong> ${esc(currentUser?.full_name || currentUser?.username || 'Administrator')}</div>
         </div>
       </div>
 
@@ -785,10 +793,10 @@ export const printDashboardReport = (kpis = {}, categories = {}, assignees = [],
                 else if (emp.active === 1) cap = 'Optimal';
                 return `
                   <tr>
-                    <td><strong>${emp.name}</strong><br/><span style="color: #64748b; font-size: 9px;">@${emp.username}</span></td>
-                    <td style="text-align: center; font-weight: bold; color: #0284c7;">${emp.active}</td>
-                    <td style="text-align: center; color: #059669;">${emp.completed}</td>
-                    <td style="text-align: center; font-weight: bold;">${emp.total}</td>
+                    <td><strong>${esc(emp.name)}</strong><br/><span style="color: #64748b; font-size: 9px;">@${esc(emp.username)}</span></td>
+                    <td style="text-align: center; font-weight: bold; color: #0284c7;">${esc(emp.active)}</td>
+                    <td style="text-align: center; color: #059669;">${esc(emp.completed)}</td>
+                    <td style="text-align: center; font-weight: bold;">${esc(emp.total)}</td>
                     <td><span style="font-size: 9px; font-weight: bold; text-transform: uppercase;">${cap}</span></td>
                   </tr>
                 `;
