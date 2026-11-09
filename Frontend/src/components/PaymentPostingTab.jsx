@@ -129,7 +129,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     setImportMsg('');
 
     try {
-      const res = await api.importExcel(file);
+      const res = await api.importExcel(file, 'payment_posting');
       const msg = res.message || 'Payment Posting tasks imported successfully!';
       setImportMsg(msg);
       showFeedback('success', msg);

@@ -65,8 +65,23 @@ function parseDateValue(value) {
 /** The cell's text (stripped), or the fallback when the cell is empty. */
 const textOf = (row, key, fallback = '') => pyStr(isTruthy(row.get(key)) ? row.get(key) : fallback).trim();
 
-function categoryOf(row) {
-  const raw = pyStr(row.has('category') ? row.get('category') : 'credentialing')
+function categoryOf(row, defaultCategory) {
+  if (defaultCategory && defaultCategory.toLowerCase().trim() === 'payment_posting') {
+    return 'payment_posting';
+  }
+  // Auto-detect payment posting by column presence
+  if (
+    row.has('num_files_ppt') ||
+    row.has('denials_ss') ||
+    row.has('time_by_manish') ||
+    row.has('file_name') ||
+    row.has('remaining') ||
+    row.has('approx_time_min') ||
+    row.has('final_time_user')
+  ) {
+    return 'payment_posting';
+  }
+  const raw = pyStr(row.has('category') ? row.get('category') : (defaultCategory || 'credentialing'))
     .toLowerCase()
     .trim()
     .replaceAll(' ', '_')
@@ -75,6 +90,7 @@ function categoryOf(row) {
   if (raw.includes('era') || raw.includes('eft')) return 'era_eft';
   if (raw.includes('payment') || raw.includes('posting') || raw.includes('ppt')) return 'payment_posting';
   if (raw.includes('general')) return 'general';
+  if (defaultCategory) return defaultCategory;
   return 'credentialing';
 }
 
@@ -91,7 +107,7 @@ function statusOf(row) {
 }
 
 /** Each row is saved on its own, as before (rows saved before a failing row stay saved). */
-async function importRows(db, records, creator) {
+async function importRows(db, records, creator, defaultCategory) {
   for (const row of records) {
     const rawTaskId = row.get('task_id');
     const rawText = rawTaskId === null || rawTaskId === undefined ? '' : pyStr(rawTaskId).trim();
@@ -104,7 +120,7 @@ async function importRows(db, records, creator) {
         : null;
 
     const values = {
-      category: categoryOf(row),
+      category: categoryOf(row, defaultCategory),
       project_name: textOf(row, 'project_name', 'US24 Solution Project'),
       task_name: textOf(row, 'task_name', 'Standard Task'),
       sub_plan: textOf(row, 'sub_plan'),
@@ -177,7 +193,8 @@ export function importRoutes({ db, logger }) {
       });
     }
 
-    await importRows(db, records, req.user);
+    const defaultCategory = req.body?.category || req.query?.category || null;
+    await importRows(db, records, req.user, defaultCategory);
     return res.json({
       success: true,
       message: `Successfully imported/updated ${records.length} tasks from spreadsheet.`,

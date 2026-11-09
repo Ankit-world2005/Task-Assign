@@ -108,18 +108,20 @@ export const api = {
   },
 
   // Import Operations (Excel / Spreadsheet)
-  importExcel: async (file) => {
+  importExcel: async (file, category) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (category) formData.append('category', category);
     const res = await apiClient.post('/import-excel/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      params: category ? { category } : {},
     });
     return res.data;
   },
 
-  importCsv: async (file) => api.importExcel(file),
+  importCsv: async (file, category) => api.importExcel(file, category),
 };
 
 export default api;
