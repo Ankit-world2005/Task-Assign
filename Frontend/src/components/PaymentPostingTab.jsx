@@ -434,7 +434,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </div>
         </div>
 
-        {/* Header Right: Action Tab Toggle Button */}
+        {/* Header Right: Task Toggle Button */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             type="button"
@@ -455,7 +455,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             }}
           >
             <span>⚡</span>
-            <span>Action Tab</span>
+            <span>Task</span>
           </button>
         </div>
       </div>
