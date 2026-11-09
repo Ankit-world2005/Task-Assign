@@ -311,6 +311,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 <option value="era_eft">ERA / EFT</option>
                 <option value="credentialing">Credentialing</option>
                 <option value="portal_creation">Portal Creation</option>
+                <option value="payment_posting">Payment Posting</option>
                 <option value="general">General</option>
               </select>
 
