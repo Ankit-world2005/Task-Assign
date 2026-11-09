@@ -17,7 +17,7 @@ import {
   resolveTaskId,
   updateTask,
 } from '../models/tasks.js';
-import { fullName, getUserById } from '../models/users.js';
+import { fullName, getUserById, isAdmin } from '../models/users.js';
 import { serializeLog, serializeTask, serializeTasks, userNames } from '../serializers.js';
 import { validateTaskInput } from '../validation/taskInput.js';
 
@@ -25,7 +25,7 @@ export function taskRoutes({ db, logger }) {
   const router = express.Router();
 
   const taskOr404 = async (req) => {
-    const task = await findTask(db, req.params.pk, req.query);
+    const task = await findTask(db, req.params.pk, req.query, req.user);
     if (task) return task;
     // A non-numeric id gets a bare "Not found.", as before.
     throw new HttpError(404, {
@@ -34,7 +34,7 @@ export function taskRoutes({ db, logger }) {
   };
 
   route(router, '/tasks', {
-    get: async (req, res) => res.json(await serializeTasks(db, await listTasks(db, req.query))),
+    get: async (req, res) => res.json(await serializeTasks(db, await listTasks(db, req.query, req.user))),
     post: async (req, res) => {
       const data = requestData(req);
       const result = await validateTaskInput(db, data);
@@ -86,6 +86,7 @@ export function taskRoutes({ db, logger }) {
     put: update(false),
     patch: update(true),
     delete: async (req, res) => {
+      if (!isAdmin(req.user)) throw new HttpError(403, { detail: 'Only administrators can delete tasks.' });
       await deleteTask(db, (await taskOr404(req)).id);
       res.status(204).end();
     },

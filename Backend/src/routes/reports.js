@@ -11,7 +11,7 @@ import {
   listTasksForAssignee,
   recentLogs,
 } from '../models/tasks.js';
-import { displayName, fullName, listWorkloadUsers } from '../models/users.js';
+import { displayName, fullName, isAdmin, listWorkloadUsers } from '../models/users.js';
 import { serializeLog, serializeTasks, serializeUser, userNames } from '../serializers.js';
 
 const ACTIVE_STATUSES = ['Request', 'Pending', 'Assigned', 'In Progress', 'Pending Info'];
@@ -30,28 +30,41 @@ export function reportRoutes({ db }) {
   // Dashboard analytics: KPI counts, category totals, per-employee workload, latest activity.
   route(router, '/stats', {
     get: async (req, res) => {
-      const total = await countTasks(db);
-      const completed = await countTasks(db, 'status = ?', 'Completed');
+      const isStaff = !isAdmin(req.user);
+      const user = req.user;
+      const userFilter = isStaff && user ? 'assignee_id = ?' : null;
+      const userParams = isStaff && user ? [user.id] : [];
+
+      const scopedCount = async (clause, ...params) => {
+        if (!userFilter) return countTasks(db, clause, ...params);
+        if (!clause) return countTasks(db, userFilter, ...userParams);
+        return countTasks(db, `${clause} AND ${userFilter}`, ...params, ...userParams);
+      };
+
+      const total = await scopedCount();
+      const completed = await scopedCount('status = ?', 'Completed');
 
       const workloadRows = await db.all(
         `SELECT assignee_id, COUNT(*) AS total,
            SUM(CASE WHEN status IN (${placeholders(ACTIVE_STATUSES)}) THEN 1 ELSE 0 END) AS active,
            SUM(CASE WHEN status IN (${placeholders(DONE_STATUSES)}) THEN 1 ELSE 0 END) AS completed
-         FROM tasks_task WHERE assignee_id IS NOT NULL GROUP BY assignee_id`,
+         FROM tasks_task WHERE assignee_id IS NOT NULL ${isStaff && user ? 'AND assignee_id = ?' : ''} GROUP BY assignee_id`,
         ...ACTIVE_STATUSES,
         ...DONE_STATUSES,
+        ...(isStaff && user ? [user.id] : []),
       );
       const workload = new Map(workloadRows.map((row) => [row.assignee_id, row]));
-      const assignees = (await listWorkloadUsers(db)).map((user) => {
-        const stats = workload.get(user.id);
+      const allUsers = isStaff && user ? [user] : await listWorkloadUsers(db);
+      const assignees = allUsers.map((u) => {
+        const stats = workload.get(u.id);
         return {
-          id: user.id,
-          name: displayName(user),
-          username: user.username,
+          id: u.id,
+          name: displayName(u),
+          username: u.username,
           total: Number(stats?.total ?? 0),
           active: Number(stats?.active ?? 0),
           completed: Number(stats?.completed ?? 0),
-          avatar_color: user.profile ? user.profile.avatar_color : '#2563eb',
+          avatar_color: u.profile ? u.profile.avatar_color : '#2563eb',
         };
       });
 
@@ -59,18 +72,18 @@ export function reportRoutes({ db }) {
       res.json({
         kpis: {
           total,
-          in_progress: await countTasks(db, 'status = ?', 'In Progress'),
+          in_progress: await scopedCount('status = ?', 'In Progress'),
           completed,
-          pending: await countTasks(db, 'status IN (?, ?, ?)', 'Pending', 'Pending Info', 'Request'),
-          assigned: await countTasks(db, 'status = ?', 'Assigned'),
+          pending: await scopedCount('status IN (?, ?, ?)', 'Pending', 'Pending Info', 'Request'),
+          assigned: await scopedCount('status = ?', 'Assigned'),
           completion_rate: total > 0 ? Number(((completed / total) * 100).toFixed(1)) : 0,
         },
         categories: {
-          credentialing: await countTasks(db, 'category = ?', 'credentialing'),
-          portal_creation: await countTasks(db, 'category = ?', 'portal_creation'),
-          era_eft: await countTasks(db, 'category = ?', 'era_eft'),
-          payment_posting: await countTasks(db, 'category = ?', 'payment_posting'),
-          general: await countTasks(db, 'category = ?', 'general'),
+          credentialing: await scopedCount('category = ?', 'credentialing'),
+          portal_creation: await scopedCount('category = ?', 'portal_creation'),
+          era_eft: await scopedCount('category = ?', 'era_eft'),
+          payment_posting: await scopedCount('category = ?', 'payment_posting'),
+          general: await scopedCount('category = ?', 'general'),
         },
         assignees,
         recent_logs: (await recentLogs(db, 8)).map((log) => serializeLog(log, names)),
@@ -105,7 +118,7 @@ export function reportRoutes({ db }) {
 
   route(router, '/export-csv', {
     get: async (req, res) => {
-      const tasks = await listTasks(db, { category: req.query.category });
+      const tasks = await listTasks(db, { category: req.query.category }, req.user);
       const names = await userNames(db);
       const lines = [
         formatCsvRow([

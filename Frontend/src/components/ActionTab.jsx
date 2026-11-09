@@ -108,13 +108,15 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
   });
 
   const unassignedTasks = tasks.filter((t) => !t.assignee);
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+  const effectiveStaff = isAdminUser ? selectedStaffUser : currentUser;
 
   // If a staff user is selected, find their active user profile and tasks
-  const activeStaff = selectedStaffUser
-    ? usersList.find((u) => u.id === selectedStaffUser.id) || selectedStaffUser
-    : null;
+  const activeStaff = effectiveStaff
+    ? usersList.find((u) => u.id === effectiveStaff.id) || effectiveStaff
+    : (isAdminUser ? null : currentUser);
 
-  const isUnassignedView = selectedStaffUser?.id === 'unassigned';
+  const isUnassignedView = isAdminUser && selectedStaffUser?.id === 'unassigned';
 
   const currentStaffTasks = activeStaff
     ? isUnassignedView
@@ -655,14 +657,14 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
             </div>
           </div>
 
-          {/* Staff Directory Cards Grid */}
+          {/* Staff Directory Cards Grid - restricted to current user for staff members */}
           {loading ? (
             <div className="glass-panel" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
               Loading staff directory...
             </div>
           ) : (
             <div className="staff-dir-grid">
-              {filteredStaffList.map((user) => {
+              {filteredStaffList.filter((u) => isAdminUser || u.id === currentUser?.id).map((user) => {
                 const userAllTasks = tasks.filter((t) => t.assignee === user.id);
                 const userPending = userAllTasks.filter((t) => t.status === 'Pending' || t.status === 'Request').length;
                 const userApproved = userAllTasks.filter((t) => t.status === 'Approved').length;

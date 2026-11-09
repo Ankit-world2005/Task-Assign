@@ -153,6 +153,7 @@ async function importRows(db, records, creator, defaultCategory) {
         approx_time_min: textOf(row, 'approx_time_min'),
         final_time_user: textOf(row, 'final_time_user'),
         remarks: textOf(row, 'remarks') || textOf(row, 'notes'),
+        assigned_user: assigneeName || (assignee ? (assignee.full_name || assignee.username) : ''),
         sup_qa: textOf(row, 'sup_qa'),
         time_by_manish: textOf(row, 'time_by_manish'),
       };

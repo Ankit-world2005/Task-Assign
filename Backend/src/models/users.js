@@ -70,20 +70,53 @@ export async function findUserByLogin(q, identifier) {
   );
 }
 
-/** Spreadsheet assignee match: case-insensitive "contains" on username, names or email. */
+/** Spreadsheet assignee match: robust case-insensitive matching on username, names, email, employee ID or sub-tokens. */
 export async function findUserByFuzzyName(q, name) {
-  const value = likeContains(name);
-  return hydrate(
-    await q.get(
+  if (!name || typeof name !== 'string') return null;
+  const clean = name.trim();
+  if (!clean || ['none', 'unassigned', '-', 'n/a', 'na'].includes(clean.toLowerCase())) return null;
+
+  // 1. Direct contains check
+  const value = likeContains(clean);
+  const direct = await q.get(
+    `${USER_SELECT} WHERE ${q.icontains('u.username')} OR ${q.icontains('u.first_name')}
+       OR ${q.icontains('u.last_name')} OR ${q.icontains('u.email')} OR ${q.icontains('p.employee_id')}
+     ORDER BY u.id LIMIT 1`,
+    value,
+    value,
+    value,
+    value,
+    value,
+  );
+  if (direct) return hydrate(direct);
+
+  // 2. Tokenized search: if clean has multiple words/tokens (e.g. "Sohail Khan", "Dr. Rohit", "Manish / QA")
+  const tokens = clean.split(/[\s,/_.-]+/).filter((t) => t.length >= 3);
+  for (const token of tokens) {
+    const tVal = likeContains(token);
+    const byToken = await q.get(
       `${USER_SELECT} WHERE ${q.icontains('u.username')} OR ${q.icontains('u.first_name')}
          OR ${q.icontains('u.last_name')} OR ${q.icontains('u.email')}
        ORDER BY u.id LIMIT 1`,
-      value,
-      value,
-      value,
-      value,
-    ),
-  );
+      tVal,
+      tVal,
+      tVal,
+      tVal,
+    );
+    if (byToken) return hydrate(byToken);
+  }
+
+  // 3. Reverse check: see if any existing user's username or first_name is contained inside `clean`
+  const allUsers = await q.all(`${USER_SELECT}`);
+  const cleanLower = clean.toLowerCase();
+  for (const row of allUsers) {
+    const u = hydrate(row);
+    if (u.username && cleanLower.includes(u.username.toLowerCase())) return u;
+    if (u.first_name && u.first_name.length >= 3 && cleanLower.includes(u.first_name.toLowerCase())) return u;
+    if (u.email && cleanLower.includes(u.email.toLowerCase())) return u;
+  }
+
+  return null;
 }
 
 export async function listUsers(q) {

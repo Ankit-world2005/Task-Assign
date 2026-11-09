@@ -31,6 +31,10 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
   };
 
   const handleOpenEmployeeTasks = async (emp) => {
+    // Non-admin staff can only open their own tasks modal
+    if (currentUser?.profile?.role !== 'admin' && emp.id !== currentUser?.id) {
+      return;
+    }
     setActiveEmployeeModal(emp);
 
     if (!employeeTasks[emp.id]) {

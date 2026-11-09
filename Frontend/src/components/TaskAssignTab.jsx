@@ -168,15 +168,19 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
     setJustAssignedId(null);
   }, [taskType]);
 
-  // Set default assignee to first staff employee
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+
+  // Set default assignee to current user (for staff) or first staff employee (for admin)
   useEffect(() => {
-    if (usersList.length > 0 && !formData.assignee) {
+    if (!isAdminUser && currentUser?.id) {
+      setFormData((prev) => ({ ...prev, assignee: currentUser.id }));
+    } else if (usersList.length > 0 && !formData.assignee) {
       const staffUser = usersList.find((u) => u.profile?.role === 'employee') || usersList[0];
       if (staffUser) {
         setFormData((prev) => ({ ...prev, assignee: staffUser.id }));
       }
     }
-  }, [usersList]);
+  }, [usersList, isAdminUser, currentUser]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

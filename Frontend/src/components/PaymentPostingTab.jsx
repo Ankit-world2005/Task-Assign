@@ -42,13 +42,17 @@ export function extractPaymentPostingFields(task) {
 
 export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const { currentUser, usersList } = useAuth();
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+  const isStaff = !isAdminUser;
+
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskForLogs, setSelectedTaskForLogs] = useState(null);
 
-  // Sub-tabs: 'assign' (Task Assign form view) or 'action' (Action Tab queue view)
-  const [activeSubTab, setActiveSubTab] = useState('assign');
+  // Sub-tabs: 'assign' (Task Assign form view) or 'action' (Action Tab queue view).
+  // Staff members default directly to 'action' so they immediately view their assigned tasks.
+  const [activeSubTab, setActiveSubTab] = useState(isStaff ? 'action' : 'assign');
 
   // Import Tasks State
   const [showImportModal, setShowImportModal] = useState(false);
@@ -68,7 +72,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     approx_time_min: '',
     final_time_user: '',
     remarks: '',
-    assignee_id: '',
+    assignee_id: isStaff ? (currentUser?.id || '') : '',
     sup_qa: '',
     time_by_manish: '',
   });
@@ -87,11 +91,15 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     setTimeout(() => setFeedback({ type: '', message: '' }), 5000);
   };
 
-  // Fetch all payment posting tasks
+  // Fetch payment posting tasks (scoped to current user for staff)
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const data = await api.getTasks({ category: 'payment_posting' });
+      const params = { category: 'payment_posting' };
+      if (isStaff && currentUser?.id) {
+        params.assignee_id = currentUser.id;
+      }
+      const data = await api.getTasks(params);
       const enriched = (data || []).map(extractPaymentPostingFields);
       setTasks(enriched);
     } catch (err) {
@@ -106,15 +114,17 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     fetchTasks();
   }, []);
 
-  // Set default assignee to first employee
+  // Set default assignee
   useEffect(() => {
-    if (usersList.length > 0 && !formData.assignee_id) {
+    if (isStaff && currentUser?.id) {
+      setFormData((prev) => ({ ...prev, assignee_id: currentUser.id }));
+    } else if (usersList.length > 0 && !formData.assignee_id) {
       const staffUser = usersList.find((u) => u.profile?.role === 'employee') || usersList[0];
       if (staffUser) {
         setFormData((prev) => ({ ...prev, assignee_id: staffUser.id }));
       }
     }
-  }, [usersList]);
+  }, [usersList, isStaff, currentUser]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -234,12 +244,16 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     return Array.from(set).sort();
   }, [tasks]);
 
-  // Filtered tasks calculation
+  // Filtered tasks calculation (only assigned tasks visible to staff users)
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
+      // Security & Portal Scoping: staff members strictly only see tasks assigned to them
+      if (isStaff && String(t.assignee_id || t.assignee) !== String(currentUser?.id)) {
+        return false;
+      }
       if (statusFilter !== 'all' && t.status !== statusFilter) return false;
       if (projectFilter !== 'all' && t.project_name !== projectFilter) return false;
-      if (staffFilter !== 'all') {
+      if (isAdminUser && staffFilter !== 'all') {
         if (staffFilter === 'unassigned') {
           if (t.assignee_id || t.assignee) return false;
         } else if (String(t.assignee_id || t.assignee) !== String(staffFilter)) {
@@ -260,7 +274,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       }
       return true;
     });
-  }, [tasks, statusFilter, projectFilter, staffFilter, searchQuery]);
+  }, [tasks, statusFilter, projectFilter, staffFilter, searchQuery, isStaff, isAdminUser, currentUser]);
 
   // Metrics
   const stats = useMemo(() => {
@@ -484,24 +498,45 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               />
             </div>
 
-            {/* Staff Queue Filter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Staff:</label>
-              <select
-                className="box-select"
-                value={staffFilter}
-                onChange={(e) => setStaffFilter(e.target.value)}
-                style={{ padding: '5px 10px', fontSize: '0.82rem' }}
-              >
-                <option value="all">All Staff</option>
-                <option value="unassigned">Unassigned</option>
-                {usersList.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name || u.username}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Staff Queue Filter - Only selectable for admins; staff members see their own assigned queue */}
+            {isAdminUser ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Staff:</label>
+                <select
+                  className="box-select"
+                  value={staffFilter}
+                  onChange={(e) => setStaffFilter(e.target.value)}
+                  style={{ padding: '5px 10px', fontSize: '0.82rem' }}
+                >
+                  <option value="all">All Staff</option>
+                  <option value="unassigned">Unassigned</option>
+                  {usersList.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name || u.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '4px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    background: 'rgba(37, 99, 235, 0.1)',
+                    color: '#2563eb',
+                    border: '1px solid rgba(37, 99, 235, 0.25)',
+                  }}
+                >
+                  👤 Assigned Queue: {currentUser?.full_name || currentUser?.username}
+                </span>
+              </div>
+            )}
 
             {/* Status Filter */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -826,19 +861,30 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
                 {/* 11. Assigned User */}
                 <div className="compact-form-group">
-                  <label className="compact-form-label">Assigned User *</label>
+                  <label className="compact-form-label">
+                    Assigned User * {isStaff && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>(Assigned to You)</span>}
+                  </label>
                   <select
                     className="compact-form-select"
                     value={formData.assignee_id}
                     onChange={(e) => handleChange('assignee_id', e.target.value)}
+                    disabled={isStaff}
                     required
                   >
-                    <option value="">Select Employee...</option>
-                    {usersList.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name || u.username} ({u.profile?.role || 'staff'})
+                    {isStaff ? (
+                      <option value={currentUser?.id}>
+                        {currentUser?.full_name || currentUser?.username} ({currentUser?.profile?.employee_id || 'Staff'})
                       </option>
-                    ))}
+                    ) : (
+                      <>
+                        <option value="">Select Employee...</option>
+                        {usersList.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.full_name || u.username} ({u.profile?.role || 'staff'})
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                 </div>
 

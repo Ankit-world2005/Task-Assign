@@ -1,6 +1,7 @@
 // Task and task-log queries. `q` is the database or an open transaction (same interface).
 import { likeContains, pyInt } from '../lib/py.js';
 import { currentYear, nowDb, todayUtc } from '../lib/time.js';
+import { isAdmin } from './users.js';
 
 export const CATEGORY_CHOICES = Object.freeze({
   credentialing: 'Credentialing',
@@ -112,9 +113,32 @@ function lastParam(query, key) {
 }
 
 /** WHERE conditions for the task list filters (?category, ?status, ?assignee_id, ?assignee, ?search). */
-function taskFilters(q, query) {
+function taskFilters(q, query, user = null) {
   const where = [];
   const params = [];
+
+  // Strict tenant/user isolation: non-admin employees can ONLY view tasks assigned to them (or unassigned tasks they created)
+  if (user && !isAdmin(user)) {
+    where.push('(t.assignee_id = ? OR (t.assignee_id IS NULL AND t.created_by_id = ?))');
+    params.push(user.id, user.id);
+  } else {
+    const assigneeId = lastParam(query, 'assignee_id');
+    if (assigneeId) {
+      const id = pyInt(assigneeId);
+      if (Number.isSafeInteger(id)) {
+        where.push('t.assignee_id = ?');
+        params.push(id);
+      } else {
+        where.push('1 = 0');
+      }
+    }
+    const assignee = lastParam(query, 'assignee');
+    if (assignee) {
+      where.push(`t.assignee_id IN (SELECT id FROM auth_user WHERE ${q.iexact('username')})`);
+      params.push(q.iexactValue(assignee));
+    }
+  }
+
   const category = lastParam(query, 'category');
   if (category && category !== 'all') {
     where.push(q.iexact('t.category'));
@@ -124,21 +148,6 @@ function taskFilters(q, query) {
   if (status && status !== 'all') {
     where.push(q.iexact('t.status'));
     params.push(q.iexactValue(status));
-  }
-  const assigneeId = lastParam(query, 'assignee_id');
-  if (assigneeId) {
-    const id = pyInt(assigneeId);
-    if (Number.isSafeInteger(id)) {
-      where.push('t.assignee_id = ?');
-      params.push(id);
-    } else {
-      where.push('1 = 0');
-    }
-  }
-  const assignee = lastParam(query, 'assignee');
-  if (assignee) {
-    where.push(`t.assignee_id IN (SELECT id FROM auth_user WHERE ${q.iexact('username')})`);
-    params.push(q.iexactValue(assignee));
   }
   const search = lastParam(query, 'search');
   if (search) {
@@ -150,17 +159,17 @@ function taskFilters(q, query) {
   return { where, params };
 }
 
-export async function listTasks(q, query = {}) {
-  const { where, params } = taskFilters(q, query);
+export async function listTasks(q, query = {}, user = null) {
+  const { where, params } = taskFilters(q, query, user);
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   return q.all(`SELECT t.* FROM tasks_task t ${clause} ORDER BY t.created_at DESC, t.id DESC`, ...params);
 }
 
 /** Detail lookup; like DRF's get_object(), the list filters in the query string still apply. */
-export async function findTask(q, pk, query = {}) {
+export async function findTask(q, pk, query = {}, user = null) {
   const id = pyInt(pk);
   if (!Number.isSafeInteger(id)) return null;
-  const { where, params } = taskFilters(q, query);
+  const { where, params } = taskFilters(q, query, user);
   return q.get(`SELECT t.* FROM tasks_task t WHERE ${['t.id = ?', ...where].join(' AND ')}`, id, ...params);
 }
 
