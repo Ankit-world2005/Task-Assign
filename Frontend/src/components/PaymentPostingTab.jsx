@@ -421,24 +421,10 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             💰
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
                 Payment Posting
               </h1>
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '3px 10px',
-                  borderRadius: '999px',
-                  background: activeSubTab === 'action' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(11, 13, 16, 0.08)',
-                  color: activeSubTab === 'action' ? '#2563eb' : 'var(--text-main)',
-                  border: '1px solid var(--border-glass)',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                {activeSubTab === 'action' ? 'ACTION TAB' : 'TASK ASSIGN'}
-              </span>
             </div>
             <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
               {activeSubTab === 'action'
@@ -448,8 +434,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </div>
         </div>
 
-        {/* Header Right: Segmented Action Tab Switcher & Stats Capsules */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Header Right: Segmented Action Tab Switcher */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {/* Segmented Switcher for Task Assign & Action Tab */}
           <div
             style={{
@@ -467,9 +453,9 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '5px 12px',
+                padding: '6px 14px',
                 borderRadius: '999px',
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
@@ -488,9 +474,9 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '5px 12px',
+                padding: '6px 14px',
                 borderRadius: '999px',
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
                 fontWeight: 600,
                 border: 'none',
                 cursor: 'pointer',
@@ -502,13 +488,6 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               <span>⚡</span>
               <span>Action Tab</span>
             </button>
-          </div>
-
-          <div style={{ background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.2)', padding: '6px 14px', borderRadius: '999px', color: '#2563eb', fontWeight: 700, fontSize: '0.82rem' }}>
-            {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'} Total
-          </div>
-          <div style={{ background: 'rgba(22, 163, 74, 0.08)', border: '1px solid rgba(22, 163, 74, 0.2)', padding: '6px 14px', borderRadius: '999px', color: '#16a34a', fontWeight: 700, fontSize: '0.82rem' }}>
-            {stats.completed} Completed
           </div>
         </div>
       </div>
