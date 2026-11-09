@@ -6,6 +6,7 @@ import { ImagePasteRemarks } from './ImagePasteRemarks';
 import { printEnrollmentsReport } from '../utils/printHelper';
 import { formatDate, formatDateTime } from '../utils/dateFormat';
 import DateInput from './DateInput';
+import StatusBadge from './StatusBadge';
 
 const CREDENTIALING_PROJECTS = [
   'Hari Kisan',
@@ -629,9 +630,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                     </td>
 
                     <td>
-                      <span className={`status-badge ${(task.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                        {task.status || 'Request'}
-                      </span>
+                      <StatusBadge status={task.status} />
                     </td>
 
                     <td style={{ textAlign: 'right' }}>

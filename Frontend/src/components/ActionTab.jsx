@@ -5,6 +5,7 @@ import TaskLogsModal from './TaskLogsModal';
 import { RemarksDisplay } from './ImagePasteRemarks';
 import { printStaffQueueReport } from '../utils/printHelper';
 import { formatDate } from '../utils/dateFormat';
+import StatusBadge from './StatusBadge';
 
 // Approving these task types needs portal details, which are entered on the Update page
 const PORTAL_CREDENTIAL_CATEGORIES = ['portal_creation', 'password_reset'];
@@ -407,9 +408,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                       </h3>
                     </div>
 
-                    <span className={`status-badge ${(task.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                      {task.status || 'Request'}
-                    </span>
+                    <StatusBadge status={task.status} />
                   </div>
 
                   {/* Task Details Grid */}

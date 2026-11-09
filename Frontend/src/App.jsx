@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import './index.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import LoginModal from './components/LoginModal';
 import LoginPage from './components/LoginPage';
 import DashboardTab from './components/DashboardTab';
 import TaskAssignTab from './components/TaskAssignTab';
@@ -115,9 +114,6 @@ function AppContent() {
           <UsersTab />
         )}
       </main>
-
-      {/* 2-Step OTP Authentication Modal */}
-      <LoginModal />
 
       {/* Footer */}
       <footer className="footer">

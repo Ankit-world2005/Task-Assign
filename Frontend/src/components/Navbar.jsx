@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCategory }) => {
-  const { currentUser, setIsLoginModalOpen, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const [openDropdown, setOpenDropdown] = useState(null); // 'task' | 'enrollment' | 'profile' | null
   const [isPinned, setIsPinned] = useState(false);
   const hoverTimeoutRef = useRef(null);
@@ -217,15 +217,7 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
                   Sign out
                 </button>
               </>
-            ) : (
-              <button
-                type="button"
-                className="btn-header-signin"
-                onClick={() => setIsLoginModalOpen(true)}
-              >
-                Sign In with OTP
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
       </header>

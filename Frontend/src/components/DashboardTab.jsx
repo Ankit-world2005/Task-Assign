@@ -5,6 +5,7 @@ import TaskLogsModal from './TaskLogsModal';
 import { RemarksDisplay } from './ImagePasteRemarks';
 import { printDashboardReport } from '../utils/printHelper';
 import { formatDateTime } from '../utils/dateFormat';
+import StatusBadge from './StatusBadge';
 
 export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory }) => {
   const { currentUser } = useAuth();
@@ -412,9 +413,7 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                   <div>
                     <div style={{ fontSize: '0.86rem', color: 'var(--text-main)' }}>
                       <strong>{log.updated_by_name}</strong> updated status to{' '}
-                      <span className={`status-badge ${(log.new_status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                        {log.new_status || 'Request'}
-                      </span>
+                      <StatusBadge status={log.new_status} />
                     </div>
                     {(log.remarks || log.attachment) && (
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -506,9 +505,7 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                      <span className={`status-badge ${(task.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                        {task.status || 'Request'}
-                      </span>
+                      <StatusBadge status={task.status} />
                       <button
                         type="button"
                         className="btn-table-action"

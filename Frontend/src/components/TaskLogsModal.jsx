@@ -7,6 +7,7 @@ import { printTaskAuditReport } from '../utils/printHelper';
 import { addDays, isFollowUpOverdue, localDateString } from '../utils/followUp';
 import { formatDate, formatDateTime, formatTime } from '../utils/dateFormat';
 import DateInput from './DateInput';
+import StatusBadge from './StatusBadge';
 
 const MOC_OPTIONS = [
   { value: 'call', label: 'Call', icon: '📞' },
@@ -150,9 +151,7 @@ const LogDetailsView = ({ log, number, category, onBack }) => {
                   <span className="status-chip-arrow">→</span>
                 </>
               )}
-              <span className={`status-badge ${(log.new_status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                {log.new_status || 'Request'}
-              </span>
+              <StatusBadge status={log.new_status} />
             </div>
           </ReadonlyField>
           <ReadonlyField label="Reassigned To">{log.reassigned_to_name || <NotProvided />}</ReadonlyField>
@@ -506,9 +505,7 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                 {currentTask.project_name} • {currentTask.insurance_name}
               </div>
             </div>
-            <span className={`status-badge ${(currentTask.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-              {currentTask.status || 'Request'}
-            </span>
+            <StatusBadge status={currentTask.status} />
           </div>
 
           {/* Print & Excel Export Action Buttons */}
@@ -571,9 +568,9 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                     <strong>{currentUser?.full_name || 'Administrator'}</strong>
                   </div>
                 </div>
-                <span className={`status-badge ${(currentTask.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
+                <StatusBadge status={currentTask.status}>
                   Current: {currentTask.status || 'Request'}
-                </span>
+                </StatusBadge>
               </div>
 
               <div className="update-form-grid">
@@ -997,9 +994,7 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                             <span className="status-chip-arrow">→</span>
                           </>
                         )}
-                        <span className={`status-badge ${(log.new_status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                          {log.new_status || 'Request'}
-                        </span>
+                        <StatusBadge status={log.new_status} />
 
                         {log.reassigned_to_name && (
                           <span className="reassign-pill">

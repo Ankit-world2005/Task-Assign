@@ -5,6 +5,7 @@ import TaskLogsModal from './TaskLogsModal';
 import { ImagePasteRemarks } from './ImagePasteRemarks';
 import { formatDate } from '../utils/dateFormat';
 import DateInput from './DateInput';
+import StatusBadge from './StatusBadge';
 
 // Task type configuration map
 const TASK_TYPE_CONFIG = {
@@ -604,9 +605,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                       <td className="cell-date">{formatDate(t.creation_date, '—')}</td>
 
                       <td>
-                        <span className={`status-badge ${(t.status || 'Request').toLowerCase().replace(/\s+/g, '-')}`}>
-                          {t.status || 'Request'}
-                        </span>
+                        <StatusBadge status={t.status} />
                       </td>
 
                       <td className="cell-align-right">
