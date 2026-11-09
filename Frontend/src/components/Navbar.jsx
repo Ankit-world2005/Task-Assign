@@ -80,12 +80,6 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
       desc: 'Portal password recovery & credential update',
       icon: '🔑',
     },
-    {
-      id: 'payment-posting',
-      label: 'Payment Posting',
-      desc: 'Batch & manual posting, denials, and PPT queues',
-      icon: '💰',
-    },
   ];
 
   const isTaskTabActive = taskTypes.some((t) => t.id === currentTab) || currentTab === 'employee-task' || currentTab === 'action-tab';

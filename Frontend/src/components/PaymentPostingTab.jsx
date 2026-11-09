@@ -434,61 +434,29 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </div>
         </div>
 
-        {/* Header Right: Segmented Action Tab Switcher */}
+        {/* Header Right: Action Tab Toggle Button */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {/* Segmented Switcher for Task Assign & Action Tab */}
-          <div
+          <button
+            type="button"
+            onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
             style={{
               display: 'inline-flex',
-              background: 'rgba(11, 13, 16, 0.05)',
-              padding: '3px',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
               borderRadius: '999px',
-              border: '1px solid var(--border-glass)',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: activeSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+              background: activeSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+              color: activeSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+              transition: 'all 0.15s ease',
             }}
           >
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('assign')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '6px 14px',
-                borderRadius: '999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                background: activeSubTab === 'assign' ? 'var(--ink)' : 'transparent',
-                color: activeSubTab === 'assign' ? '#ffffff' : 'var(--text-main)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>✍️</span>
-              <span>Task Assign</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('action')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '6px 14px',
-                borderRadius: '999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                background: activeSubTab === 'action' ? '#2563eb' : 'transparent',
-                color: activeSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>⚡</span>
-              <span>Action Tab</span>
-            </button>
-          </div>
+            <span>⚡</span>
+            <span>Action Tab</span>
+          </button>
         </div>
       </div>
 
@@ -615,18 +583,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </button>
             )}
 
-            {/* Direct Switch to Task Assign button */}
+            {/* Export CSV button */}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => setActiveSubTab('assign')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', fontSize: '0.82rem' }}
-              >
-                <span>➕</span>
-                <span>Assign New Task</span>
-              </button>
-
               <button
                 type="button"
                 className="btn-secondary"
@@ -678,16 +636,6 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                       <td colSpan="16" style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)' }}>
                         <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📋</div>
                         <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--ink)' }}>No Payment Posting Tasks Found</div>
-                        <div style={{ fontSize: '0.82rem', marginTop: '6px' }}>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={() => setActiveSubTab('assign')}
-                            style={{ padding: '6px 14px', fontSize: '0.82rem', marginTop: '8px' }}
-                          >
-                            + Assign a Task Now
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   ) : (
