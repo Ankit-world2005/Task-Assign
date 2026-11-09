@@ -50,8 +50,10 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   // Sub-tabs: 'assign' (Task Assign form view) or 'action' (Action Tab queue view)
   const [activeSubTab, setActiveSubTab] = useState('assign');
 
-  // Quick paste clipboard text state
-  const [pasteNotice, setPasteNotice] = useState('');
+  // Import Tasks State
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
+  const fileInputRef = useRef(null);
 
   // Form state matching the 13 Excel columns
   const [formData, setFormData] = useState({
@@ -117,81 +119,28 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  /**
-   * Quick auto-fill parser when user pastes an Excel row into the quick-paste input
-   * Columns: Date,Project Name,Task Type,File Name,Number of File for PPT,DENIALS SS,Remaining,Approx Time Min,Final Time by User,Remarks,Assinged User,Sup QA,Time By Manish
-   */
-  const handleQuickPaste = (e) => {
-    const raw = (e.clipboardData || window.clipboardData)?.getData('text') || e.target.value;
-    if (!raw || !raw.trim()) return;
+  // Bulk import Payment Posting tasks from Excel (.xlsx, .xls) or CSV spreadsheet
+  const handleImportFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // Handle single or multi-token split (tabs, commas, or multi-space)
-    const isTab = raw.includes('\t');
-    let cells = [];
-    if (isTab) {
-      cells = raw.split('\t').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-    } else if (raw.includes(',')) {
-      cells = raw.split(',').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-    } else {
-      cells = raw.split(/\s{2,}/).map((c) => c.trim().replace(/^["']|["']$/g, ''));
+    setImporting(true);
+    setImportMsg('');
+
+    try {
+      const res = await api.importExcel(file);
+      const msg = res.message || 'Payment Posting tasks imported successfully!';
+      setImportMsg(msg);
+      showFeedback('success', msg);
+      await fetchTasks();
+      if (e.target) e.target.value = '';
+    } catch (err) {
+      const errMsg = err.response?.data?.detail || 'Import failed. Please check spreadsheet formatting.';
+      setImportMsg(errMsg);
+      showFeedback('error', errMsg);
+    } finally {
+      setImporting(false);
     }
-
-    if (cells.length < 2) return;
-    e.preventDefault();
-
-    // Check if first row is header
-    const firstCell = (cells[0] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    let offset = 0;
-    if (firstCell === 'date' || firstCell.includes('project')) {
-      offset = 13;
-      if (cells.length < 15) return;
-    }
-
-    const col = (idx) => cells[idx + offset] || '';
-
-    // Match assigned user
-    const assignedStr = col(10);
-    let matchedId = '';
-    if (assignedStr) {
-      const clean = assignedStr.toLowerCase().trim();
-      const found = usersList.find((u) => {
-        const uName = (u.username || '').toLowerCase();
-        const fName = (u.full_name || '').toLowerCase();
-        return uName === clean || fName === clean || fName.includes(clean) || clean.includes(uName);
-      });
-      if (found) matchedId = found.id;
-    }
-
-    // Parse date
-    const rawDate = col(0);
-    let parsedDate = rawDate;
-    if (rawDate) {
-      const d = new Date(rawDate);
-      if (!isNaN(d.getTime())) {
-        parsedDate = d.toISOString().split('T')[0];
-      }
-    } else {
-      parsedDate = new Date().toISOString().split('T')[0];
-    }
-
-    setFormData({
-      date: parsedDate || new Date().toISOString().split('T')[0],
-      project_name: col(1) || formData.project_name,
-      task_type: col(2) || 'Payment Posting',
-      file_name: col(3) || '',
-      num_files_ppt: col(4) || '',
-      denials_ss: col(5) || '',
-      remaining: col(6) || '',
-      approx_time_min: col(7) || '',
-      final_time_user: col(8) || '',
-      remarks: col(9) || '',
-      assignee_id: matchedId || formData.assignee_id,
-      sup_qa: col(11) || '',
-      time_by_manish: col(12) || '',
-    });
-
-    setPasteNotice('✓ Auto-filled fields from pasted Excel data!');
-    setTimeout(() => setPasteNotice(''), 4000);
   };
 
   // Submit Handler for Task Assignment
@@ -724,37 +673,102 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       {/* ============================================================ */}
       {activeSubTab === 'assign' && (
         <div className="glass-panel" style={{ padding: '2rem 2.5rem', borderRadius: '12px' }}>
-          {/* Quick Excel Paste Bar */}
+          {/* Import Tasks Function */}
           <div
             style={{
-              background: 'rgba(37, 99, 235, 0.04)',
-              border: '1px dashed rgba(37, 99, 235, 0.3)',
-              borderRadius: '8px',
-              padding: '10px 14px',
+              background: 'rgba(37, 99, 235, 0.03)',
+              border: '1px dashed rgba(37, 99, 235, 0.35)',
+              borderRadius: '10px',
+              padding: '14px 18px',
               marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              justifyContent: 'space-between',
+              gap: '14px',
               flexWrap: 'wrap',
             }}
           >
-            <span style={{ fontSize: '1.1rem' }}>📋</span>
-            <div style={{ flex: '1 1 280px' }}>
-              <input
-                type="text"
-                className="compact-form-input"
-                placeholder="Quick Paste: Click here and press Ctrl+V to auto-fill from copied Excel row..."
-                onPaste={handleQuickPaste}
-                onChange={() => {}}
-                style={{ width: '100%', fontSize: '0.82rem', background: 'transparent', border: 'none', padding: '4px 0' }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  background: 'rgba(37, 99, 235, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.3rem',
+                  flexShrink: 0,
+                }}
+              >
+                📤
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--ink)' }}>
+                  Import Payment Posting Tasks (Excel / CSV)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Upload Excel (.xlsx, .xls) or CSV spreadsheet to bulk import Payment Posting tasks into the queue
+                </div>
+              </div>
             </div>
-            {pasteNotice && (
-              <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 600 }}>
-                {pasteNotice}
-              </span>
-            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".xlsx, .xls, .csv"
+                onChange={handleImportFileUpload}
+                style={{ display: 'none' }}
+              />
+
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 16px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: importing ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <span>{importing ? '⏳' : '📤'}</span>
+                <span>{importing ? 'Importing Tasks...' : 'Import Task File'}</span>
+              </button>
+            </div>
           </div>
+
+          {importMsg && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '0.82rem',
+                marginBottom: '1.25rem',
+                background: importMsg.toLowerCase().includes('success') ? 'rgba(22, 163, 74, 0.12)' : 'rgba(201, 25, 46, 0.12)',
+                color: importMsg.toLowerCase().includes('success') ? '#15803d' : '#c9192e',
+                border: `1px solid ${importMsg.toLowerCase().includes('success') ? 'rgba(22, 163, 74, 0.25)' : 'rgba(201, 25, 46, 0.25)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>{importMsg}</span>
+              <button
+                type="button"
+                onClick={() => setImportMsg('')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', color: 'inherit' }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* The 13 Columns Form */}
           <form onSubmit={handleSubmit}>

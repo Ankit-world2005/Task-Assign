@@ -127,6 +127,24 @@ async function importRows(db, records, creator) {
     if (notes) values.notes = notes;
 
     const existing = taskId ? await getTaskByTaskId(db, taskId) : null;
+    const isPaymentPosting = values.category === 'payment_posting';
+    if (isPaymentPosting) {
+      const meta = {
+        file_name: textOf(row, 'file_name'),
+        num_files_ppt: textOf(row, 'num_files_ppt'),
+        denials_ss: textOf(row, 'denials_ss'),
+        remaining: textOf(row, 'remaining'),
+        approx_time_min: textOf(row, 'approx_time_min'),
+        final_time_user: textOf(row, 'final_time_user'),
+        remarks: textOf(row, 'remarks') || textOf(row, 'notes'),
+        sup_qa: textOf(row, 'sup_qa'),
+        time_by_manish: textOf(row, 'time_by_manish'),
+      };
+      values.notes = JSON.stringify(meta);
+      values.insurance_name = textOf(row, 'file_name') || 'Payment Posting';
+      values.task_name = 'Payment Posting';
+      if (meta.sup_qa) values.follow_up_value = meta.sup_qa;
+    }
     if (existing) {
       await db.transaction((tx) => updateTask(tx, existing, values));
     } else {

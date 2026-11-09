@@ -23,6 +23,15 @@ const KEY_MAPPINGS = {
   status: ['status', 'state', 'taskstatus'],
   notes: ['notes', 'note', 'comments', 'comment', 'description'],
   assignee: ['assignee', 'assignedto', 'owner', 'assigneduser', 'assingeduser', 'user', 'staff'],
+  file_name: ['filename', 'file', 'nameoffile'],
+  num_files_ppt: ['numberoffileforppt', 'numberoffilesforppt', 'numfilesppt', 'filesppt', 'numberoffile'],
+  denials_ss: ['denialsss', 'denials', 'denial'],
+  remaining: ['remaining', 'remain'],
+  approx_time_min: ['approxtimemin', 'approxtime', 'estimatedtime', 'estimatedtimemin'],
+  final_time_user: ['finaltimebyuser', 'finaltime', 'usertime', 'actualtime'],
+  remarks: ['remarks', 'remark'],
+  sup_qa: ['supqa', 'qa', 'supervisorqa'],
+  time_by_manish: ['timebymanish', 'manishtime', 'manish'],
 };
 
 function fieldForHeader(header) {
