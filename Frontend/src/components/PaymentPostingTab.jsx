@@ -51,6 +51,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [activeSubTab, setActiveSubTab] = useState('assign');
 
   // Import Tasks State
+  const [showImportModal, setShowImportModal] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
   const fileInputRef = useRef(null);
@@ -133,6 +134,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       setImportMsg(msg);
       showFeedback('success', msg);
       await fetchTasks();
+      setActiveSubTab('action');
       if (e.target) e.target.value = '';
     } catch (err) {
       const errMsg = err.response?.data?.detail || 'Import failed. Please check spreadsheet formatting.';
@@ -383,8 +385,31 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </div>
         </div>
 
-        {/* Header Right: Task Toggle Button */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        {/* Header Right: Import Task & Task Toggle Buttons */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setShowImportModal(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              borderRadius: '999px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: '1px solid var(--border-glass)',
+              background: 'rgba(11, 13, 16, 0.05)',
+              color: 'var(--text-main)',
+              transition: 'all 0.15s ease',
+            }}
+            title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
+          >
+            <span>📤</span>
+            <span>Import Task</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
@@ -987,6 +1012,101 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Import Tasks Modal */}
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div
+            className="glass-panel"
+            style={{ maxWidth: '500px', width: '100%', padding: '2rem', borderRadius: '14px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--ink)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📤</span>
+                <span>Import Payment Posting Tasks</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowImportModal(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer', padding: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              Select or drop your Microsoft Excel (.xlsx, .xls) or CSV spreadsheet file to bulk import Payment Posting tasks into the queue.
+            </p>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".xlsx, .xls, .csv"
+              onChange={handleImportFileUpload}
+              style={{ display: 'none' }}
+            />
+
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: '2px dashed rgba(37, 99, 235, 0.35)',
+                borderRadius: '10px',
+                padding: '2.5rem 1.5rem',
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: 'rgba(37, 99, 235, 0.03)',
+                marginBottom: '1rem',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📊</div>
+              <div style={{ fontWeight: 700, color: 'var(--ink)', fontSize: '0.95rem' }}>
+                {importing ? 'Importing tasks from spreadsheet...' : 'Click to browse or drop Excel file here'}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '6px' }}>
+                Supports Microsoft Excel (.xlsx, .xls) and CSV spreadsheets
+              </div>
+            </div>
+
+            {importing && (
+              <div style={{ textAlign: 'center', color: '#2563eb', fontSize: '0.85rem', marginBottom: '12px', fontWeight: 600 }}>
+                ⏳ Processing and creating tasks in database...
+              </div>
+            )}
+
+            {importMsg && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  background: importMsg.toLowerCase().includes('success') ? 'rgba(22, 163, 74, 0.12)' : 'rgba(201, 25, 46, 0.12)',
+                  color: importMsg.toLowerCase().includes('success') ? '#15803d' : '#c9192e',
+                  border: `1px solid ${importMsg.toLowerCase().includes('success') ? 'rgba(22, 163, 74, 0.25)' : 'rgba(201, 25, 46, 0.25)'}`,
+                  marginBottom: '1rem',
+                }}
+              >
+                {importMsg}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '1rem' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportMsg('');
+                }}
+                style={{ padding: '7px 16px', fontSize: '0.84rem' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
