@@ -73,6 +73,7 @@ function categoryOf(row) {
     .replaceAll('/', '_');
   if (raw.includes('portal')) return 'portal_creation';
   if (raw.includes('era') || raw.includes('eft')) return 'era_eft';
+  if (raw.includes('payment') || raw.includes('posting') || raw.includes('ppt')) return 'payment_posting';
   if (raw.includes('general')) return 'general';
   return 'credentialing';
 }

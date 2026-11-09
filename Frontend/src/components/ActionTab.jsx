@@ -401,7 +401,8 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                         {task.category === 'era_eft' && 'ERA / EFT'}
                         {task.category === 'credentialing' && 'Credentialing'}
                         {task.category === 'portal_creation' && 'Portal Creation'}
-                        {!['era_eft', 'credentialing', 'portal_creation'].includes(task.category) && (task.category || 'General')}
+                        {task.category === 'payment_posting' && 'Payment Posting'}
+                        {!['era_eft', 'credentialing', 'portal_creation', 'payment_posting'].includes(task.category) && (task.category || 'General')}
                       </span>
                       <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
                         {task.task_name || task.project_name}

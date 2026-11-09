@@ -69,6 +69,7 @@ export function reportRoutes({ db }) {
           credentialing: await countTasks(db, 'category = ?', 'credentialing'),
           portal_creation: await countTasks(db, 'category = ?', 'portal_creation'),
           era_eft: await countTasks(db, 'category = ?', 'era_eft'),
+          payment_posting: await countTasks(db, 'category = ?', 'payment_posting'),
           general: await countTasks(db, 'category = ?', 'general'),
         },
         assignees,

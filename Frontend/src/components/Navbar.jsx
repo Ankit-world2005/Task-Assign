@@ -80,6 +80,12 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
       desc: 'Portal password recovery & credential update',
       icon: '🔑',
     },
+    {
+      id: 'payment-posting',
+      label: 'Payment Posting',
+      desc: 'Batch & manual posting, denials, and PPT queues',
+      icon: '💰',
+    },
   ];
 
   const isTaskTabActive = taskTypes.some((t) => t.id === currentTab) || currentTab === 'employee-task' || currentTab === 'action-tab';
@@ -307,6 +313,20 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
               }}
             >
               Enrollment
+            </button>
+
+            {/* Payment Posting Tab */}
+            <button
+              id="nav-tab-payment-posting"
+              type="button"
+              className={`workspace-tab-btn ${currentTab === 'payment-posting' ? 'active' : ''}`}
+              onClick={() => {
+                setCurrentTab('payment-posting');
+                setOpenDropdown(null);
+                setIsPinned(false);
+              }}
+            >
+              Payment Posting
             </button>
 
             {/* Users Management Tab (Admin Only) */}

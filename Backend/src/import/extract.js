@@ -22,7 +22,7 @@ const KEY_MAPPINGS = {
   follow_up_value: ['followupvalue', 'remarks', 'remark', 'contactinfo', 'phoneemail', 'detail'],
   status: ['status', 'state', 'taskstatus'],
   notes: ['notes', 'note', 'comments', 'comment', 'description'],
-  assignee: ['assignee', 'assignedto', 'owner', 'assigneduser', 'user', 'staff'],
+  assignee: ['assignee', 'assignedto', 'owner', 'assigneduser', 'assingeduser', 'user', 'staff'],
 };
 
 function fieldForHeader(header) {

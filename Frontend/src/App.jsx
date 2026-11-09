@@ -9,6 +9,7 @@ import ActionTab from './components/ActionTab';
 import EnrollmentTab from './components/EnrollmentTab';
 import UsersTab from './components/UsersTab';
 import ProfileDashboard from './components/ProfileDashboard';
+import PaymentPostingTab from './components/PaymentPostingTab';
 
 function AppContent() {
   const { currentUser, isLoading } = useAuth();
@@ -107,6 +108,12 @@ function AppContent() {
             setCurrentTab={setCurrentTab}
             activeCategory={activeEnrollmentCategory}
             setActiveCategory={setActiveEnrollmentCategory}
+            onSelectStaff={handleSelectStaff}
+          />
+        )}
+        {currentTab === 'payment-posting' && (
+          <PaymentPostingTab
+            setCurrentTab={setCurrentTab}
             onSelectStaff={handleSelectStaff}
           />
         )}

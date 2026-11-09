@@ -8,6 +8,7 @@ export const CATEGORY_CHOICES = Object.freeze({
   era_eft: 'ERA/EFT',
   password_reset: 'Password Reset',
   portal_unblock: 'Portal Unblock',
+  payment_posting: 'Payment Posting',
   general: 'General',
 });
 

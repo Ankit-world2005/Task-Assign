@@ -15,3 +15,4 @@ export const StatusBadge = ({ status = 'Request', children, className = '', styl
 };
 
 export default StatusBadge;
+
