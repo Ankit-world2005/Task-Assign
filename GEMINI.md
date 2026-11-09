@@ -1,9 +1,24 @@
 # US24 Solutions — Task Assign System Directives
 
-## 1. Git & Environment Branching Strategy
-- **Development Branch (`dev`)**: All active code changes, features, and fixes MUST be committed and pushed to the `dev` branch on GitHub (`Ankit-world2005/US24_Task_Assign` and `Ankit-world2005/Task-Assign`).
-- **Production Branch (`main`)**: The `main` branch is reserved for verified production releases. Pushes to `main` automatically deploy to the Vercel production environment.
-- Always verify branches and push development work to `dev`.
+## 1. Mandatory Git Push & Multi-Environment Policy (STRICT)
+- **Rule 1 — Dev First (Always)**: ALL code changes, updates, fixes, and new features MUST FIRST be committed and pushed to the **`dev`** environment branch of the GitHub repositories (`Ankit-world2005/US24_Task_Assign` and `Ankit-world2005/Task-Assign`).
+- **Rule 2 — Sequential Environment Progression**: Never push directly to subsequent environments (`uat`, `main` / production) skipping `dev`. Only after changes have landed and been verified in the `dev` environment can they proceed to further branches/environments.
+- **Rule 3 — Production Gate**: The **`main`** branch is strictly reserved for verified production releases. Pushes to `main` trigger automated production deployment on Vercel.
+
+### Standard Git Workflow:
+```bash
+# 1. Always develop and commit on dev
+git checkout dev
+git add -A
+git commit -m "feat/fix: <description>"
+
+# 2. Step 1: PUSH TO DEV FIRST
+git push us24 dev
+git push origin dev
+
+# 3. Step 2: Only proceed to further environments (UAT / Main) after verification
+# (e.g. promoting dev -> uat or dev -> main when instructed)
+```
 
 ## 2. Project Architecture & Local Runtime
 - **Backend API**: Node.js + Express REST API running on port `8001` (`http://127.0.0.1:8001/api/`).
