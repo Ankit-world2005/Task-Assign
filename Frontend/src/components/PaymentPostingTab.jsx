@@ -47,8 +47,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskForLogs, setSelectedTaskForLogs] = useState(null);
 
-  // Sub-tabs: 'action' (Action Tab view) or 'assign' (Task Assign form view)
-  const [activeSubTab, setActiveSubTab] = useState('action');
+  // Sub-tabs: 'assign' (Task Assign form view) or 'action' (Action Tab queue view)
+  const [activeSubTab, setActiveSubTab] = useState('assign');
 
   // Quick paste clipboard text state
   const [pasteNotice, setPasteNotice] = useState('');
@@ -421,17 +421,89 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             💰
           </div>
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
-              Payment Posting
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
+                Payment Posting
+              </h1>
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: '999px',
+                  background: activeSubTab === 'action' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(11, 13, 16, 0.08)',
+                  color: activeSubTab === 'action' ? '#2563eb' : 'var(--text-main)',
+                  border: '1px solid var(--border-glass)',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {activeSubTab === 'action' ? 'ACTION TAB' : 'TASK ASSIGN'}
+              </span>
+            </div>
             <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
-              Manage payment posting queues, assign daily tasks, and update work logs.
+              {activeSubTab === 'action'
+                ? 'Review payment posting queues, update task statuses, and record final times.'
+                : 'Assign payment posting, denials, ERA remittance, and PPT queues.'}
             </p>
           </div>
         </div>
 
-        {/* Global Stats Capsule */}
+        {/* Header Right: Segmented Action Tab Switcher & Stats Capsules */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Segmented Switcher for Task Assign & Action Tab */}
+          <div
+            style={{
+              display: 'inline-flex',
+              background: 'rgba(11, 13, 16, 0.05)',
+              padding: '3px',
+              borderRadius: '999px',
+              border: '1px solid var(--border-glass)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('assign')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 12px',
+                borderRadius: '999px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                background: activeSubTab === 'assign' ? 'var(--ink)' : 'transparent',
+                color: activeSubTab === 'assign' ? '#ffffff' : 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>✍️</span>
+              <span>Task Assign</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('action')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 12px',
+                borderRadius: '999px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                background: activeSubTab === 'action' ? '#2563eb' : 'transparent',
+                color: activeSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>⚡</span>
+              <span>Action Tab</span>
+            </button>
+          </div>
+
           <div style={{ background: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.2)', padding: '6px 14px', borderRadius: '999px', color: '#2563eb', fontWeight: 700, fontSize: '0.82rem' }}>
             {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'} Total
           </div>
@@ -439,50 +511,6 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             {stats.completed} Completed
           </div>
         </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* SUB-TABS NAVIGATION: ACTION TAB vs TASK ASSIGN TAB           */}
-      {/* ============================================================ */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          borderBottom: '1px solid var(--border-glass)',
-          marginBottom: '22px',
-          paddingBottom: '8px',
-        }}
-      >
-        <button
-          type="button"
-          className={`workspace-tab-btn ${activeSubTab === 'action' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('action')}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
-        >
-          <span>⚡ Action Tab</span>
-          <span
-            style={{
-              fontSize: '0.72rem',
-              padding: '2px 7px',
-              borderRadius: '10px',
-              background: activeSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.08)',
-              color: activeSubTab === 'action' ? '#fff' : 'var(--text-main)',
-              fontWeight: 700,
-            }}
-          >
-            {tasks.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className={`workspace-tab-btn ${activeSubTab === 'assign' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('assign')}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 18px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}
-        >
-          <span>✍️ Task Assign</span>
-        </button>
       </div>
 
       {/* ============================================================ */}
@@ -769,63 +797,6 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       {/* ============================================================ */}
       {activeSubTab === 'assign' && (
         <div className="glass-panel" style={{ padding: '2rem 2.5rem', borderRadius: '12px' }}>
-          {/* Card Header */}
-          <div style={{ borderBottom: '1px solid var(--border-glass)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div
-                  style={{
-                    fontSize: '1.8rem',
-                    width: '48px',
-                    height: '48px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '12px',
-                    background: 'rgba(37, 99, 235, 0.1)',
-                    border: '1px solid rgba(37, 99, 235, 0.25)',
-                    flexShrink: 0,
-                  }}
-                >
-                  💰
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--serif)', fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
-                    Payment Posting
-                    <span
-                      style={{
-                        marginLeft: '10px',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        padding: '3px 10px',
-                        borderRadius: '999px',
-                        background: 'rgba(37, 99, 235, 0.1)',
-                        color: '#2563eb',
-                        border: '1px solid rgba(37, 99, 235, 0.25)',
-                        letterSpacing: '0.04em',
-                        verticalAlign: 'middle',
-                      }}
-                    >
-                      TASK ASSIGN
-                    </span>
-                  </h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', marginTop: '3px', margin: 0 }}>
-                    Assign payment posting, denials, ERA remittance, and PPT queues.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setActiveSubTab('action')}
-                style={{ fontSize: '0.82rem', padding: '6px 14px' }}
-              >
-                ← Back to Action Tab
-              </button>
-            </div>
-          </div>
-
           {/* Quick Excel Paste Bar */}
           <div
             style={{
