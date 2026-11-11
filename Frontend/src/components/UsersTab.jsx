@@ -1,6 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { DEPARTMENT_OPTIONS, parseDepartments } from '../utils/departments';
+
+const DepartmentMultiSelect = ({ id, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
+  const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const panelId = `${id}-panel`;
+  const selected = parseDepartments(value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', handleOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const handleToggle = () => {
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const modalRect = triggerRef.current.closest('.glass-panel')?.getBoundingClientRect();
+      const bottomEdge = modalRect ? Math.min(window.innerHeight, modalRect.bottom) : window.innerHeight;
+      const topEdge = modalRect ? Math.max(0, modalRect.top) : 0;
+      const spaceBelow = bottomEdge - rect.bottom;
+      const spaceAbove = rect.top - topEdge;
+      setOpenUp(spaceBelow < 240 && spaceAbove > spaceBelow);
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  const toggleDepartment = (dept) => {
+    const next = new Set(selected);
+    if (next.has(dept)) next.delete(dept);
+    else next.add(dept);
+    onChange(DEPARTMENT_OPTIONS.filter((opt) => next.has(opt)).join(', '));
+  };
+
+  return (
+    <div className="dept-multiselect" ref={containerRef}>
+      <button
+        ref={triggerRef}
+        id={id}
+        type="button"
+        className={`dept-multiselect-trigger${isOpen ? ' is-open' : ''}`}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={handleToggle}
+      >
+        <span className={selected.length === 0 ? 'dept-multiselect-placeholder' : 'dept-multiselect-value'}>
+          {selected.length > 0 ? selected.join(', ') : 'Select departments...'}
+        </span>
+        <svg
+          className="dept-multiselect-caret"
+          width="16"
+          height="16"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div id={panelId} className={`dept-multiselect-panel${openUp ? ' is-open-up' : ''}`}>
+          <fieldset className="dept-multiselect-fieldset">
+            <legend className="sr-only">Department tasks</legend>
+            <div className="dept-multiselect-actions">
+              <span className="dept-multiselect-count">
+                {selected.length} of {DEPARTMENT_OPTIONS.length} selected
+              </span>
+              <div className="dept-multiselect-action-group">
+                <button
+                  type="button"
+                  className="dept-multiselect-action-btn"
+                  onClick={() => onChange(DEPARTMENT_OPTIONS.join(', '))}
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  className="dept-multiselect-action-btn"
+                  onClick={() => onChange('')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="dept-multiselect-grid">
+              {DEPARTMENT_OPTIONS.map((dept, index) => {
+                const checkboxId = `${id}-opt-${index}`;
+                const checked = selected.includes(dept);
+                return (
+                  <div key={dept} className={`dept-multiselect-option${checked ? ' is-checked' : ''}`}>
+                    <input
+                      id={checkboxId}
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleDepartment(dept)}
+                    />
+                    <label htmlFor={checkboxId}>{dept}</label>
+                  </div>
+                );
+              })}
+            </div>
+          </fieldset>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const UsersTab = () => {
   const { currentUser, usersList, reloadUsers } = useAuth();
@@ -17,6 +143,25 @@ export const UsersTab = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [passwordModalUser, setPasswordModalUser] = useState(null);
   const [newPassword, setNewPassword] = useState('');
+  const [openActionMenuUserId, setOpenActionMenuUserId] = useState(null);
+
+  // Close actions dropdown menu on outside click or Escape key
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.user-actions-dropdown-wrapper')) {
+        setOpenActionMenuUserId(null);
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') setOpenActionMenuUserId(null);
+    };
+    document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   // Create User Form State
   const initialCreateState = {
@@ -28,7 +173,7 @@ export const UsersTab = () => {
     role: 'employee',
     employee_id: '',
     phone: '',
-    department: 'Operations & Enrollment',
+    department: 'Credentialing',
     is_active: true,
     avatar_color: '#2563eb',
   };
@@ -122,7 +267,7 @@ export const UsersTab = () => {
         role: editingUser.profile?.role || 'employee',
         employee_id: editingUser.profile?.employee_id || '',
         phone: editingUser.profile?.phone || '',
-        department: editingUser.profile?.department || 'Operations & Enrollment',
+        department: editingUser.profile?.department ?? '',
         avatar_color: editingUser.profile?.avatar_color || '#2563eb',
         is_active: editingUser.is_active,
       });
@@ -399,8 +544,8 @@ export const UsersTab = () => {
       </div>
 
       {/* Users Data Table */}
-      <div className="glass-panel" style={{ overflow: 'hidden', padding: 0 }}>
-        <div style={{ overflowX: 'auto' }}>
+      <div className="glass-panel" style={{ overflow: 'visible', padding: 0 }}>
+        <div style={{ overflowX: 'auto', minHeight: '280px' }}>
           <table className="app-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border-glass)' }}>
@@ -422,7 +567,7 @@ export const UsersTab = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => {
+                filteredUsers.map((u, index) => {
                   const isSelf = currentUser?.id === u.id;
                   const isAdmin = u.profile?.role === 'admin';
                   const avatarLetter = u.first_name ? u.first_name[0] : (u.username ? u.username[0].toUpperCase() : 'U');
@@ -492,16 +637,28 @@ export const UsersTab = () => {
 
                       {/* Department Column */}
                       <td style={{ padding: '14px 18px' }}>
-                        <span style={{
-                          fontSize: '0.8rem',
-                          color: '#555b63',
-                          background: 'rgba(11, 13, 16, 0.04)',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid rgba(11, 13, 16, 0.08)'
-                        }}>
-                          {u.profile?.department || 'Operations'}
-                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {(u.profile?.department || 'Operations')
+                            .split(',')
+                            .map((dept) => dept.trim())
+                            .filter(Boolean)
+                            .map((dept) => (
+                              <span
+                                key={dept}
+                                style={{
+                                  fontSize: '0.8rem',
+                                  color: '#555b63',
+                                  background: 'rgba(11, 13, 16, 0.04)',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(11, 13, 16, 0.08)',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {dept}
+                              </span>
+                            ))}
+                        </div>
                       </td>
 
                       {/* Role Column */}
@@ -557,92 +714,192 @@ export const UsersTab = () => {
                       </td>
 
                       {/* Actions Column */}
-                      <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
-                          {/* Toggle Access Button */}
+                      <td style={{ padding: '14px 18px', textAlign: 'right', position: 'relative' }}>
+                        <div className="user-actions-dropdown-wrapper" style={{ display: 'inline-block', position: 'relative' }}>
                           <button
                             type="button"
-                            onClick={() => handleToggleAccess(u)}
-                            disabled={isSelf || actionLoading}
-                            title={isSelf ? 'You cannot revoke your own administrator access' : (u.is_active ? 'Revoke login access' : 'Grant login access')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenActionMenuUserId(openActionMenuUserId === u.id ? null : u.id);
+                            }}
+                            aria-label={`Actions for ${u.full_name || u.username}`}
+                            aria-haspopup="true"
+                            aria-expanded={openActionMenuUserId === u.id}
+                            title="Actions menu"
                             style={{
-                              padding: '5px 12px',
+                              width: '32px',
+                              height: '32px',
                               borderRadius: '6px',
-                              fontSize: '0.78rem',
-                              fontWeight: 600,
-                              cursor: isSelf ? 'not-allowed' : 'pointer',
-                              opacity: isSelf ? 0.45 : 1,
-                              background: u.is_active ? 'rgba(201, 25, 46, 0.12)' : 'rgba(22, 163, 74, 0.15)',
-                              border: u.is_active ? '1px solid rgba(201, 25, 46, 0.35)' : '1px solid rgba(22, 163, 74, 0.4)',
-                              color: u.is_active ? '#c9192e' : '#15803d',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: openActionMenuUserId === u.id ? 'rgba(11, 13, 16, 0.1)' : 'rgba(11, 13, 16, 0.04)',
+                              border: '1px solid var(--border-glass)',
+                              color: 'var(--ink)',
+                              cursor: 'pointer',
+                              fontSize: '1.25rem',
+                              fontWeight: 'bold',
+                              lineHeight: 1,
                               transition: 'all 0.15s ease'
                             }}
                           >
-                            {u.is_active ? '🚫 Revoke Access' : '✓ Grant Access'}
+                            ⋮
                           </button>
 
-                          {/* Edit Details */}
-                          <button
-                            type="button"
-                            onClick={() => setEditingUser(JSON.parse(JSON.stringify(u)))}
-                            disabled={actionLoading}
-                            title="Edit user details"
-                            style={{
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              fontSize: '0.78rem',
-                              fontWeight: 500,
-                              background: 'rgba(11, 13, 16, 0.05)',
-                              border: '1px solid var(--border-glass)',
-                              color: 'var(--text-light)',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✏️ Edit
-                          </button>
-
-                          {/* Reset Password */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPasswordModalUser(u);
-                              setNewPassword('');
-                            }}
-                            disabled={actionLoading}
-                            title="Reset password"
-                            style={{
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              fontSize: '0.78rem',
-                              fontWeight: 500,
-                              background: 'rgba(11, 13, 16, 0.05)',
-                              border: '1px solid var(--border-glass)',
-                              color: 'var(--text-light)',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🔑 Pass
-                          </button>
-
-                          {/* Delete User */}
-                          {!isSelf && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteUser(u)}
-                              disabled={actionLoading}
-                              title="Delete user account"
+                          {openActionMenuUserId === u.id && (
+                            <div
+                              className="user-actions-dropdown-menu"
+                              onClick={(e) => e.stopPropagation()}
                               style={{
-                                padding: '5px 8px',
-                                borderRadius: '6px',
-                                fontSize: '0.78rem',
-                                background: 'rgba(201, 25, 46, 0.08)',
-                                border: '1px solid rgba(201, 25, 46, 0.25)',
-                                color: '#c9192e',
-                                cursor: 'pointer'
+                                position: 'absolute',
+                                top: index >= filteredUsers.length - 2 && filteredUsers.length > 3 ? 'auto' : 'calc(100% + 4px)',
+                                bottom: index >= filteredUsers.length - 2 && filteredUsers.length > 3 ? 'calc(100% + 4px)' : 'auto',
+                                right: 0,
+                                minWidth: '185px',
+                                background: '#ffffff',
+                                border: '1px solid rgba(11, 13, 16, 0.12)',
+                                borderRadius: '8px',
+                                boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.18), 0 6px 12px -2px rgba(0, 0, 0, 0.08)',
+                                padding: '6px',
+                                zIndex: 100,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                textAlign: 'left'
                               }}
                             >
-                              🗑️
-                            </button>
+                              {/* Edit Details */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenActionMenuUserId(null);
+                                  setEditingUser(JSON.parse(JSON.stringify(u)));
+                                }}
+                                disabled={actionLoading}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '7px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 500,
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--ink, #0f172a)',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  transition: 'background 0.12s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(11, 13, 16, 0.05)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <span style={{ fontSize: '0.95rem' }}>✏️</span> Edit Details
+                              </button>
+
+                              {/* Reset Password */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenActionMenuUserId(null);
+                                  setPasswordModalUser(u);
+                                  setNewPassword('');
+                                }}
+                                disabled={actionLoading}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '7px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 500,
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--ink, #0f172a)',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  transition: 'background 0.12s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(11, 13, 16, 0.05)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <span style={{ fontSize: '0.95rem' }}>🔑</span> Reset Password
+                              </button>
+
+                              <div style={{ height: '1px', background: 'rgba(11, 13, 16, 0.08)', margin: '4px 0' }} />
+
+                              {/* Toggle Access (Revoke / Grant) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isSelf) return;
+                                  setOpenActionMenuUserId(null);
+                                  handleToggleAccess(u);
+                                }}
+                                disabled={isSelf || actionLoading}
+                                title={isSelf ? 'You cannot revoke your own administrator access' : (u.is_active ? 'Revoke login access' : 'Grant login access')}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '7px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 600,
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: isSelf ? '#94a3b8' : (u.is_active ? '#c9192e' : '#15803d'),
+                                  cursor: isSelf ? 'not-allowed' : 'pointer',
+                                  opacity: isSelf ? 0.45 : 1,
+                                  textAlign: 'left',
+                                  transition: 'background 0.12s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSelf) e.currentTarget.style.background = u.is_active ? 'rgba(201, 25, 46, 0.08)' : 'rgba(22, 163, 74, 0.08)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSelf) e.currentTarget.style.background = 'transparent';
+                                }}
+                              >
+                                <span style={{ fontSize: '0.95rem' }}>{u.is_active ? '🚫' : '✓'}</span> {u.is_active ? 'Revoke Access' : 'Grant Access'}
+                              </button>
+
+                              {/* Delete User */}
+                              {!isSelf && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenActionMenuUserId(null);
+                                    handleDeleteUser(u);
+                                  }}
+                                  disabled={actionLoading}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '7px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 500,
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#c9192e',
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'background 0.12s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(201, 25, 46, 0.08)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <span style={{ fontSize: '0.95rem' }}>🗑️</span> Delete User
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -787,13 +1044,11 @@ export const UsersTab = () => {
               </div>
 
               <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="form-label">Department</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Operations & Enrollment"
+                <label className="form-label" htmlFor="create-department">Department</label>
+                <DepartmentMultiSelect
+                  id="create-department"
                   value={createForm.department}
-                  onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}
+                  onChange={(val) => setCreateForm({ ...createForm, department: val })}
                 />
               </div>
 
@@ -961,15 +1216,14 @@ export const UsersTab = () => {
               </div>
 
               <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="form-label">Department</label>
-                <input
-                  type="text"
-                  className="form-input"
+                <label className="form-label" htmlFor="edit-department">Department</label>
+                <DepartmentMultiSelect
+                  id="edit-department"
                   value={editingUser.profile?.department || ''}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setEditingUser({
                       ...editingUser,
-                      profile: { ...(editingUser.profile || {}), department: e.target.value },
+                      profile: { ...(editingUser.profile || {}), department: val },
                     })
                   }
                 />

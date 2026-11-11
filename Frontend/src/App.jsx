@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import './index.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { canAccessTab } from './utils/departments';
 import Navbar from './components/Navbar';
-import LoginModal from './components/LoginModal';
 import LoginPage from './components/LoginPage';
 import DashboardTab from './components/DashboardTab';
 import TaskAssignTab from './components/TaskAssignTab';
@@ -10,6 +10,7 @@ import ActionTab from './components/ActionTab';
 import EnrollmentTab from './components/EnrollmentTab';
 import UsersTab from './components/UsersTab';
 import ProfileDashboard from './components/ProfileDashboard';
+import PaymentPostingTab from './components/PaymentPostingTab';
 
 function AppContent() {
   const { currentUser, isLoading } = useAuth();
@@ -36,88 +37,121 @@ function AppContent() {
     return <LoginPage />;
   }
 
+  const activeTab = canAccessTab(currentUser, currentTab) ? currentTab : 'dashboard';
+  const selectTab = (tab) => {
+    setCurrentTab(canAccessTab(currentUser, tab) ? tab : 'dashboard');
+  };
+
   const handleSelectEnrollmentCategory = (category) => {
+    if (!canAccessTab(currentUser, 'enrollment')) {
+      selectTab('employee-task');
+      return;
+    }
     setActiveEnrollmentCategory(category);
-    setCurrentTab('enrollment');
+    selectTab('enrollment');
   };
 
   const handleSelectStaff = (staffUser) => {
     setSelectedStaffUser(staffUser);
-    setCurrentTab('employee-task');
+    selectTab('employee-task');
   };
+
+  const isAdminUser = currentUser?.profile?.role === 'admin';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header Bar with Enrollment Category Dropdown */}
       <Navbar
-        currentTab={currentTab}
-        setCurrentTab={(tab) => {
-          if (tab === 'employee-task' || tab === 'action-tab') {
-            // If navigating to employee-task from nav directly, keep or clear as appropriate
-          }
-          setCurrentTab(tab);
-        }}
+        currentTab={activeTab}
+        setCurrentTab={selectTab}
         activeCategory={activeEnrollmentCategory}
         onSelectCategory={handleSelectEnrollmentCategory}
       />
 
       {/* Main Tab View */}
       <main className="main-content" style={{ flex: 1 }}>
-        {currentTab === 'dashboard' && (
+        {activeTab === 'dashboard' && (
           <DashboardTab
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={selectTab}
             onSelectStaff={handleSelectStaff}
             onSelectCategory={handleSelectEnrollmentCategory}
           />
         )}
-        {currentTab === 'profile' && (
+        {activeTab === 'profile' && (
           <ProfileDashboard
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={selectTab}
           />
         )}
-        {currentTab === 'task-portal-creation' && (
-          <TaskAssignTab
-            taskType="task-portal-creation"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+        {activeTab === 'task-portal-creation' && (
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-portal-creation"
+              setCurrentTab={selectTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={selectTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
-        {currentTab === 'task-era-eft' && (
-          <TaskAssignTab
-            taskType="task-era-eft"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+        {activeTab === 'task-era-eft' && (
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-era-eft"
+              setCurrentTab={selectTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={selectTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
-        {currentTab === 'task-password-reset' && (
-          <TaskAssignTab
-            taskType="task-password-reset"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+        {activeTab === 'task-password-reset' && (
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-password-reset"
+              setCurrentTab={selectTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={selectTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
-        {(currentTab === 'employee-task' || currentTab === 'action-tab') && (
+        {(activeTab === 'employee-task' || activeTab === 'action-tab') && (
           <ActionTab
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={selectTab}
             selectedStaffUser={selectedStaffUser}
             setSelectedStaffUser={setSelectedStaffUser}
           />
         )}
-        {currentTab === 'enrollment' && (
+        {activeTab === 'enrollment' && canAccessTab(currentUser, 'enrollment') && (
           <EnrollmentTab
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={selectTab}
             activeCategory={activeEnrollmentCategory}
             setActiveCategory={setActiveEnrollmentCategory}
             onSelectStaff={handleSelectStaff}
           />
         )}
-        {currentTab === 'users' && currentUser?.profile?.role === 'admin' && (
+        {activeTab === 'payment-posting' && canAccessTab(currentUser, 'payment-posting') && (
+          <PaymentPostingTab
+            setCurrentTab={selectTab}
+            onSelectStaff={handleSelectStaff}
+          />
+        )}
+        {activeTab === 'users' && currentUser?.profile?.role === 'admin' && (
           <UsersTab />
         )}
       </main>
-
-      {/* 2-Step OTP Authentication Modal */}
-      <LoginModal />
 
       {/* Footer */}
       <footer className="footer">

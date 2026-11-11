@@ -3,10 +3,10 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { ImagePasteRemarks, RemarksDisplay } from './ImagePasteRemarks';
 import { splitRemarks } from '../utils/remarks';
-import { printTaskAuditReport } from '../utils/printHelper';
 import { addDays, isFollowUpOverdue, localDateString } from '../utils/followUp';
 import { formatDate, formatDateTime, formatTime } from '../utils/dateFormat';
 import DateInput from './DateInput';
+import StatusBadge from './StatusBadge';
 
 const MOC_OPTIONS = [
   { value: 'call', label: 'Call', icon: '📞' },
@@ -22,6 +22,7 @@ const CATEGORY_LABELS = {
   era_eft: 'ERA/EFT',
   password_reset: 'Password Reset',
   portal_unblock: 'Portal Unblock',
+  payment_posting: 'Payment Posting',
   general: 'General',
 };
 
@@ -150,9 +151,7 @@ const LogDetailsView = ({ log, number, category, onBack }) => {
                   <span className="status-chip-arrow">→</span>
                 </>
               )}
-              <span className={`status-badge ${(log.new_status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                {log.new_status || 'Request'}
-              </span>
+              <StatusBadge status={log.new_status} />
             </div>
           </ReadonlyField>
           <ReadonlyField label="Reassigned To">{log.reassigned_to_name || <NotProvided />}</ReadonlyField>
@@ -229,6 +228,7 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
 
   if (!currentTask) return null;
 
+  const isAdminUser = currentUser?.profile?.role === 'admin';
   const setField = (name, value) => setUpdateForm((prev) => ({ ...prev, [name]: value }));
 
   // Portal fields appear automatically once Approved is chosen for the matching task types
@@ -302,7 +302,7 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
         portal_password: showCredentials ? updateForm.portalPassword : '',
         remarks: remarks.trim(),
         attachment: attachment || '',
-        reassigned_to: reassignTo ? parseInt(reassignTo, 10) : null,
+        reassigned_to: isAdminUser && reassignTo ? parseInt(reassignTo, 10) : null,
         updated_by: currentUser?.id || null,
       };
 
@@ -482,13 +482,6 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
     URL.revokeObjectURL(url);
   };
 
-  // =========================================================================
-  // PRINT PROFESSIONAL REPORT / SAVE AS PDF (Bulletproof Iframe-based Print)
-  // =========================================================================
-  const handlePrint = () => {
-    printTaskAuditReport(currentTask, logsList, currentUser);
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-3box-container" onClick={(e) => e.stopPropagation()}>
@@ -506,21 +499,11 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                 {currentTask.project_name} • {currentTask.insurance_name}
               </div>
             </div>
-            <span className={`status-badge ${(currentTask.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-              {currentTask.status || 'Request'}
-            </span>
+            <StatusBadge status={currentTask.status} />
           </div>
 
-          {/* Print & Excel Export Action Buttons */}
+          {/* Excel Export Action Button */}
           <div className="modal-topbar-export-actions">
-            <button
-              type="button"
-              className="modal-action-pill print-pill"
-              onClick={handlePrint}
-              title="Print official task audit report or save as PDF"
-            >
-              🖨️ Print
-            </button>
             <button
               type="button"
               className="modal-action-pill excel-pill"
@@ -571,9 +554,9 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                     <strong>{currentUser?.full_name || 'Administrator'}</strong>
                   </div>
                 </div>
-                <span className={`status-badge ${(currentTask.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
+                <StatusBadge status={currentTask.status}>
                   Current: {currentTask.status || 'Request'}
-                </span>
+                </StatusBadge>
               </div>
 
               <div className="update-form-grid">
@@ -719,23 +702,25 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                   </span>
                 </div>
 
-                {/* Reassign To (Optional) */}
-                <div className="form-group-compact">
-                  <label className="box-field-label" htmlFor="upd-reassign">Reassign To (Optional)</label>
-                  <select
-                    id="upd-reassign"
-                    className="box-select"
-                    value={reassignTo}
-                    onChange={(e) => setReassignTo(e.target.value)}
-                  >
-                    <option value="">Keep current assignee ({currentTask.assignee_name || 'Unassigned'})</option>
-                    {usersList.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name} ({u.profile?.employee_id || u.username})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Reassign To (Optional, Admin Only) */}
+                {isAdminUser && (
+                  <div className="form-group-compact">
+                    <label className="box-field-label" htmlFor="upd-reassign">Reassign To (Optional)</label>
+                    <select
+                      id="upd-reassign"
+                      className="box-select"
+                      value={reassignTo}
+                      onChange={(e) => setReassignTo(e.target.value)}
+                    >
+                      <option value="">Keep current assignee ({currentTask.assignee_name || 'Unassigned'})</option>
+                      {usersList.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name} ({u.profile?.employee_id || u.username})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Remarks: text and/or image */}
                 <div className="form-group-compact span-2">
@@ -854,6 +839,13 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                   <div className="spec-value" style={{ fontSize: '0.80rem' }}>{currentTask.sub_plan || 'Standard Plan'}</div>
                 </div>
               </div>
+
+              {currentTask.address && (
+                <div className="spec-field" style={{ marginTop: '0.5rem' }}>
+                  <div className="spec-label">Address</div>
+                  <div className="spec-value" style={{ fontSize: '0.82rem' }}>{currentTask.address}</div>
+                </div>
+              )}
 
               {/* Assignee & Creation Date 2-Col Grid */}
               <div className="spec-2col-grid">
@@ -997,9 +989,7 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                             <span className="status-chip-arrow">→</span>
                           </>
                         )}
-                        <span className={`status-badge ${(log.new_status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                          {log.new_status || 'Request'}
-                        </span>
+                        <StatusBadge status={log.new_status} />
 
                         {log.reassigned_to_name && (
                           <span className="reassign-pill">

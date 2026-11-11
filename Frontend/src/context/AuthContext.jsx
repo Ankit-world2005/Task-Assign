@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [usersList, setUsersList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   // Load active user and user list on mount
@@ -83,7 +82,6 @@ export const AuthProvider = ({ children }) => {
         try {
           localStorage.setItem('us24_auth_user', JSON.stringify(data.user));
         } catch (e) {}
-        setIsLoginModalOpen(false);
         try {
           const users = await api.getUsers();
           setUsersList(users);
@@ -116,9 +114,7 @@ export const AuthProvider = ({ children }) => {
         currentUser,
         usersList,
         isLoading,
-        isLoginModalOpen,
         authError,
-        setIsLoginModalOpen,
         loginStepOne,
         verifyOtp,
         logout,

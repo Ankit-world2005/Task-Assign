@@ -3,8 +3,20 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import TaskLogsModal from './TaskLogsModal';
 import { RemarksDisplay } from './ImagePasteRemarks';
-import { printStaffQueueReport } from '../utils/printHelper';
 import { formatDate } from '../utils/dateFormat';
+import { canAccessCategory, getAllowedTaskCategories } from '../utils/departments';
+import StatusBadge from './StatusBadge';
+
+const CATEGORY_OPTIONS = [
+  { value: 'credentialing', label: 'Credentialing' },
+  { value: 'portal_creation', label: 'Portal Creation' },
+  { value: 'era_eft', label: 'ERA / EFT' },
+  { value: 'password_reset', label: 'Password Reset' },
+  { value: 'portal_unblock', label: 'Portal Unblock' },
+  { value: 'payment_posting', label: 'Payment Posting' },
+  { value: 'general', label: 'General' },
+];
+const CATEGORY_LABEL_MAP = Object.fromEntries(CATEGORY_OPTIONS.map((o) => [o.value, o.label]));
 
 // Approving these task types needs portal details, which are entered on the Update page
 const PORTAL_CREDENTIAL_CATEGORIES = ['portal_creation', 'password_reset'];
@@ -73,7 +85,8 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
   // Filter tasks based on search, status, and category
   const matchesTask = (task) => {
     if (statusFilter !== 'all' && task.status !== statusFilter) return false;
-    if (categoryFilter !== 'all' && task.category !== categoryFilter) return false;
+    const activeCategory = categoryFilter === 'all' || canAccessCategory(currentUser, categoryFilter) ? categoryFilter : 'all';
+    if (activeCategory !== 'all' && task.category !== activeCategory) return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -107,19 +120,28 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
   });
 
   const unassignedTasks = tasks.filter((t) => !t.assignee);
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+  const effectiveStaff = isAdminUser ? selectedStaffUser : currentUser;
 
   // If a staff user is selected, find their active user profile and tasks
-  const activeStaff = selectedStaffUser
-    ? usersList.find((u) => u.id === selectedStaffUser.id) || selectedStaffUser
-    : null;
+  const activeStaff = effectiveStaff
+    ? usersList.find((u) => u.id === effectiveStaff.id) || effectiveStaff
+    : (isAdminUser ? null : currentUser);
 
-  const isUnassignedView = selectedStaffUser?.id === 'unassigned';
+  const isUnassignedView = isAdminUser && selectedStaffUser?.id === 'unassigned';
 
-  const currentStaffTasks = activeStaff
+  const rawStaffTasks = activeStaff
     ? isUnassignedView
       ? unassignedTasks
       : tasks.filter((t) => t.assignee === activeStaff.id)
     : [];
+  const allowedCategories = isAdminUser ? null : (getAllowedTaskCategories(currentUser) || []);
+  const currentStaffTasks = isAdminUser
+    ? rawStaffTasks
+    : rawStaffTasks.filter((t) => canAccessCategory(currentUser, t.category));
+  const visibleCategoryOptions = isAdminUser
+    ? CATEGORY_OPTIONS
+    : CATEGORY_OPTIONS.filter((opt) => opt.value !== 'general' && canAccessCategory(currentUser, opt.value));
 
   const filteredStaffTasks = currentStaffTasks.filter(matchesTask);
 
@@ -144,58 +166,60 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
       {/* ========================================================================= */}
       {activeStaff ? (
         <div>
-          {/* Top Navigation & Breadcrumb Bar */}
-          <div className="emp-page-back-bar">
-            <button
-              type="button"
-              className="emp-back-btn"
-              onClick={() => {
-                if (setSelectedStaffUser) setSelectedStaffUser(null);
-              }}
-            >
-              ← Back to Staff Directory
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-dim)' }}>Switch Staff Queue:</span>
-              <select
-                className="form-select"
-                style={{ width: '220px', padding: '6px 10px', fontSize: '0.82rem' }}
-                value={isUnassignedView ? 'unassigned' : activeStaff.id}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === 'unassigned') {
-                    if (setSelectedStaffUser) setSelectedStaffUser({ id: 'unassigned', full_name: 'Unassigned Tasks' });
-                  } else {
-                    const u = usersList.find((x) => x.id === parseInt(val));
-                    if (u && setSelectedStaffUser) setSelectedStaffUser(u);
-                  }
+          {/* Top Navigation & Breadcrumb Bar (Admin Only) */}
+          {isAdminUser && (
+            <div className="emp-page-back-bar">
+              <button
+                type="button"
+                className="emp-back-btn"
+                onClick={() => {
+                  if (setSelectedStaffUser) setSelectedStaffUser(null);
                 }}
               >
-                {usersList.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name || u.username} ({tasks.filter((t) => t.assignee === u.id).length} tasks)
-                  </option>
-                ))}
-                {unassignedTasks.length > 0 && (
-                  <option value="unassigned">
-                    Unassigned ({unassignedTasks.length} tasks)
-                  </option>
-                )}
-              </select>
+                ← Back to Staff Directory
+              </button>
 
-              {setCurrentTab && (
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => setCurrentTab('task-assign')}
-                  style={{ padding: '7px 14px', fontSize: '0.82rem' }}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.82rem', color: 'var(--text-dim)' }}>Switch Staff Queue:</span>
+                <select
+                  className="form-select"
+                  style={{ width: '220px', padding: '6px 10px', fontSize: '0.82rem' }}
+                  value={isUnassignedView ? 'unassigned' : activeStaff.id}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'unassigned') {
+                      if (setSelectedStaffUser) setSelectedStaffUser({ id: 'unassigned', full_name: 'Unassigned Tasks' });
+                    } else {
+                      const u = usersList.find((x) => x.id === parseInt(val));
+                      if (u && setSelectedStaffUser) setSelectedStaffUser(u);
+                    }
+                  }}
                 >
-                  + Assign New Task
-                </button>
-              )}
+                  {usersList.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name || u.username} ({tasks.filter((t) => t.assignee === u.id).length} tasks)
+                    </option>
+                  ))}
+                  {unassignedTasks.length > 0 && (
+                    <option value="unassigned">
+                      Unassigned ({unassignedTasks.length} tasks)
+                    </option>
+                  )}
+                </select>
+
+                {setCurrentTab && (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setCurrentTab('task-portal-creation')}
+                    style={{ padding: '7px 14px', fontSize: '0.82rem' }}
+                  >
+                    + Assign New Task
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Profile Hero Banner */}
           <div className="emp-profile-hero">
@@ -303,14 +327,15 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
               <select
                 className="form-select"
                 style={{ width: '170px', padding: '7px 10px', fontSize: '0.84rem' }}
-                value={categoryFilter}
+                value={visibleCategoryOptions.some((o) => o.value === categoryFilter) ? categoryFilter : 'all'}
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="all">All Categories</option>
-                <option value="era_eft">ERA / EFT</option>
-                <option value="credentialing">Credentialing</option>
-                <option value="portal_creation">Portal Creation</option>
-                <option value="general">General</option>
+                {visibleCategoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -331,15 +356,6 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
               <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                 Showing <strong>{filteredStaffTasks.length}</strong> of {currentStaffTasks.length} tasks
               </span>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => printStaffQueueReport(activeStaff, filteredStaffTasks, statusFilter, categoryFilter, currentUser)}
-                style={{ padding: '7px 12px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                title="Print current employee work queue report"
-              >
-                🖨️ Print Queue
-              </button>
               <button
                 type="button"
                 className="btn-secondary"
@@ -371,15 +387,17 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 No Tasks Found
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', maxWidth: '440px', margin: '0 auto 1.25rem auto' }}>
-                {currentStaffTasks.length === 0
-                  ? `There are currently no tasks assigned to ${activeStaff.full_name || activeStaff.username}.`
-                  : 'No tasks match your active search and filter criteria.'}
+                {!isAdminUser && allowedCategories.length === 0
+                  ? 'No department tasks are assigned to your account yet. Please contact your administrator.'
+                  : currentStaffTasks.length === 0
+                    ? `There are currently no accessible tasks assigned to ${activeStaff.full_name || activeStaff.username}.`
+                    : 'No tasks match your active search and filter criteria.'}
               </p>
-              {setCurrentTab && (
+              {isAdminUser && setCurrentTab && (
                 <button
                   type="button"
                   className="btn-primary"
-                  onClick={() => setCurrentTab('task-assign')}
+                  onClick={() => setCurrentTab('task-portal-creation')}
                   style={{ padding: '8px 18px', fontSize: '0.86rem' }}
                 >
                   + Assign a Task to {activeStaff.first_name || activeStaff.username}
@@ -397,19 +415,14 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                         {task.task_id}
                       </span>
                       <span className={`category-tag ${task.category || 'general'}`}>
-                        {task.category === 'era_eft' && 'ERA / EFT'}
-                        {task.category === 'credentialing' && 'Credentialing'}
-                        {task.category === 'portal_creation' && 'Portal Creation'}
-                        {!['era_eft', 'credentialing', 'portal_creation'].includes(task.category) && (task.category || 'General')}
+                        {CATEGORY_LABEL_MAP[task.category] || task.category || 'General'}
                       </span>
                       <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
                         {task.task_name || task.project_name}
                       </h3>
                     </div>
 
-                    <span className={`status-badge ${(task.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                      {task.status || 'Request'}
-                    </span>
+                    <StatusBadge status={task.status} />
                   </div>
 
                   {/* Task Details Grid */}
@@ -463,6 +476,15 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                         {task.insurance_name}
                       </div>
                     </div>
+
+                    {task.address && (
+                      <div>
+                        <div className="emp-task-field-label">Address</div>
+                        <div className="emp-task-field-val">
+                          {task.address}
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <div className="emp-task-field-label">Sub-Plan</div>
@@ -631,11 +653,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 </button>
               )}
 
-              {setCurrentTab && (
+              {isAdminUser && setCurrentTab && (
                 <button
                   type="button"
                   className="btn-primary"
-                  onClick={() => setCurrentTab('task-assign')}
+                  onClick={() => setCurrentTab('task-portal-creation')}
                   style={{ padding: '7px 14px', fontSize: '0.84rem' }}
                 >
                   + Assign New Task
@@ -654,14 +676,14 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
             </div>
           </div>
 
-          {/* Staff Directory Cards Grid */}
+          {/* Staff Directory Cards Grid - restricted to current user for staff members */}
           {loading ? (
             <div className="glass-panel" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
               Loading staff directory...
             </div>
           ) : (
             <div className="staff-dir-grid">
-              {filteredStaffList.map((user) => {
+              {filteredStaffList.filter((u) => isAdminUser || u.id === currentUser?.id).map((user) => {
                 const userAllTasks = tasks.filter((t) => t.assignee === user.id);
                 const userPending = userAllTasks.filter((t) => t.status === 'Pending' || t.status === 'Request').length;
                 const userApproved = userAllTasks.filter((t) => t.status === 'Approved').length;
@@ -749,8 +771,8 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 );
               })}
 
-              {/* Unassigned Tasks Card if any exist */}
-              {unassignedTasks.length > 0 && (
+              {/* Unassigned Tasks Card if any exist (Admin Only) */}
+              {isAdminUser && unassignedTasks.length > 0 && (
                 <div
                   className="staff-dir-card"
                   style={{ borderStyle: 'dashed' }}

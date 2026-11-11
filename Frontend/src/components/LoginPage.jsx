@@ -159,8 +159,11 @@ export const LoginPage = () => {
               <span className="tagline">Innovative Technology Driven</span>
             </span>
           </span>
-          <div className="nav-right">
-            <span className="nav-link hide-sm">Employee Portal</span>
+          <div className="brand-submark hide-sm">
+            <span className="brand-submark-title">
+              U<span className="orange">S</span>24 AVENGERS
+            </span>
+            <span className="brand-submark-tagline">Medical Billing &amp; Credentialing</span>
           </div>
         </div>
       </nav>

@@ -1,30 +1,12 @@
 import axios from 'axios';
 
-// Base API configuration with relative paths (proxied seamlessly by Vite to Django :8000)
+// Base API configuration with relative paths (proxied by Vite to Backend :8001)
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  xsrfCookieName: 'csrftoken',
-  xsrfHeaderName: 'X-CSRFToken',
-});
-
-// Automatically attach X-Current-User header if cached in session
-apiClient.interceptors.request.use((config) => {
-  try {
-    const savedUser = localStorage.getItem('us24_auth_user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      if (parsed?.username) {
-        config.headers['X-Current-User'] = parsed.username;
-      }
-    }
-  } catch (e) {
-    // Ignore JSON parse errors
-  }
-  return config;
 });
 
 export const api = {
@@ -124,25 +106,40 @@ export const api = {
   },
 
   // Import Operations (Excel / Spreadsheet)
-  importExcel: async (file) => {
+  importExcel: async (file, category, assigneeId) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (category) formData.append('category', category);
+    if (assigneeId) formData.append('assignee_id', assigneeId);
     const res = await apiClient.post('/import-excel/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      params: category ? { category } : {},
     });
     return res.data;
   },
 
-  importCsv: async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await apiClient.post('/import-excel/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  importCsv: async (file, category) => api.importExcel(file, category),
+
+  // Payment Posting Check-Sheet (completed task log entries)
+  getPaymentCheckSheet: async () => {
+    const res = await apiClient.get('/payment-posting/check-sheet/');
+    return res.data;
+  },
+
+  createPaymentCheckSheetEntry: async (entryData) => {
+    const res = await apiClient.post('/payment-posting/check-sheet/', entryData);
+    return res.data;
+  },
+
+  updatePaymentCheckSheetEntry: async (id, entryData) => {
+    const res = await apiClient.patch(`/payment-posting/check-sheet/${id}/`, entryData);
+    return res.data;
+  },
+
+  deletePaymentCheckSheetEntry: async (id) => {
+    const res = await apiClient.delete(`/payment-posting/check-sheet/${id}/`);
     return res.data;
   },
 };
