@@ -7,7 +7,8 @@ import { parseHtmlTableRows } from './htmlTable.js';
 // Accepted column headers per task field, compared after lower-casing and removing non-alphanumerics.
 const KEY_MAPPINGS = {
   task_id: ['taskid', 'taskcode', 'tasknumber', 'code', 'id'],
-  category: ['category', 'taskcategory', 'type', 'tasktype'],
+  category: ['category', 'taskcategory', 'type'],
+  task_type: ['tasktype'],
   task_name: ['taskname', 'task', 'name', 'title'],
   project_name: ['projectname', 'project', 'client'],
   insurance_name: ['insurancename', 'insurancepayer', 'insurance', 'payer'],
@@ -19,7 +20,7 @@ const KEY_MAPPINGS = {
   individual_ptan: ['individualptan', 'individualptanid', 'pptan', 'pptanid'],
   sub_plan: ['subplan', 'plan', 'subinsurance'],
   follow_up_type: ['followuptype', 'moc', 'modeofcontact', 'contacttype', 'typeoffollowup'],
-  follow_up_value: ['followupvalue', 'remarks', 'remark', 'contactinfo', 'phoneemail', 'detail'],
+  follow_up_value: ['followupvalue', 'contactinfo', 'phoneemail', 'detail'],
   status: ['status', 'state', 'taskstatus'],
   notes: ['notes', 'note', 'comments', 'comment', 'description'],
   assignee: [

@@ -83,6 +83,7 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
   ];
 
   const isTaskTabActive = taskTypes.some((t) => t.id === currentTab) || currentTab === 'employee-task' || currentTab === 'action-tab';
+  const isAdminUser = currentUser?.profile?.role === 'admin';
 
   const getTaskTabLabel = () => {
     if (currentTab === 'employee-task' || currentTab === 'action-tab') return 'Employee Tasks';
@@ -240,59 +241,74 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
               Dashboard
             </button>
 
-            {/* Task Assign Dropdown */}
-            <div
-              className={`nav-dropdown-wrapper ${openDropdown === 'task' ? 'open' : ''}`}
-              onMouseEnter={() => handleMouseEnter('task')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                id="nav-tab-task-assign"
-                type="button"
-                className={`workspace-tab-btn ${isTaskTabActive ? 'active' : ''}`}
-                onClick={() => handleToggleClick('task')}
+            {/* Task Assign Dropdown (Admin) or Employee Tasks Button (Staff) */}
+            {isAdminUser ? (
+              <div
+                className={`nav-dropdown-wrapper ${openDropdown === 'task' ? 'open' : ''}`}
+                onMouseEnter={() => handleMouseEnter('task')}
+                onMouseLeave={handleMouseLeave}
               >
-                <span>{getTaskTabLabel()}</span>
-                <span className="dropdown-caret">▾</span>
-              </button>
+                <button
+                  id="nav-tab-task-assign"
+                  type="button"
+                  className={`workspace-tab-btn ${isTaskTabActive ? 'active' : ''}`}
+                  onClick={() => handleToggleClick('task')}
+                >
+                  <span>{getTaskTabLabel()}</span>
+                  <span className="dropdown-caret">▾</span>
+                </button>
 
-              {openDropdown === 'task' && (
-                <div className="nav-dropdown-menu" style={{ minWidth: '300px' }}>
-                  <div className="dropdown-section-title">Assign Task by Type</div>
-                  {taskTypes.map((op) => {
-                    const isCurrent = currentTab === op.id;
-                    return (
-                      <button
-                        key={op.id}
-                        type="button"
-                        className={`nav-dropdown-item ${isCurrent ? 'active-item' : ''}`}
-                        onClick={() => handleSelectOption(() => setCurrentTab(op.id))}
-                      >
-                        <span className="dropdown-item-icon">{op.icon}</span>
-                        <div style={{ flex: 1 }}>
-                          <div className="dropdown-item-label">{op.label}</div>
-                          <div className="dropdown-item-desc">{op.desc}</div>
-                        </div>
-                        {isCurrent && <span className="active-dot">●</span>}
-                      </button>
-                    );
-                  })}
-                  <div className="dropdown-divider" />
-                  <button
-                    type="button"
-                    className={`nav-dropdown-item ${(currentTab === 'employee-task' || currentTab === 'action-tab') ? 'active-item' : ''}`}
-                    onClick={() => handleSelectOption(() => setCurrentTab('employee-task'))}
-                  >
-                    <span className="dropdown-item-icon">📋</span>
-                    <div style={{ flex: 1 }}>
-                      <div className="dropdown-item-label">Employee Tasks</div>
-                      <div className="dropdown-item-desc">View personal queue and update task logs</div>
-                    </div>
-                    {(currentTab === 'employee-task' || currentTab === 'action-tab') && <span className="active-dot">●</span>}
-                  </button>
-                </div>
-              )}
-            </div>
+                {openDropdown === 'task' && (
+                  <div className="nav-dropdown-menu" style={{ minWidth: '300px' }}>
+                    <div className="dropdown-section-title">Assign Task by Type</div>
+                    {taskTypes.map((op) => {
+                      const isCurrent = currentTab === op.id;
+                      return (
+                        <button
+                          key={op.id}
+                          type="button"
+                          className={`nav-dropdown-item ${isCurrent ? 'active-item' : ''}`}
+                          onClick={() => handleSelectOption(() => setCurrentTab(op.id))}
+                        >
+                          <span className="dropdown-item-icon">{op.icon}</span>
+                          <div style={{ flex: 1 }}>
+                            <div className="dropdown-item-label">{op.label}</div>
+                            <div className="dropdown-item-desc">{op.desc}</div>
+                          </div>
+                          {isCurrent && <span className="active-dot">●</span>}
+                        </button>
+                      );
+                    })}
+                    <div className="dropdown-divider" />
+                    <button
+                      type="button"
+                      className={`nav-dropdown-item ${(currentTab === 'employee-task' || currentTab === 'action-tab') ? 'active-item' : ''}`}
+                      onClick={() => handleSelectOption(() => setCurrentTab('employee-task'))}
+                    >
+                      <span className="dropdown-item-icon">📋</span>
+                      <div style={{ flex: 1 }}>
+                        <div className="dropdown-item-label">Employee Tasks</div>
+                        <div className="dropdown-item-desc">View personal queue and update task logs</div>
+                      </div>
+                      {(currentTab === 'employee-task' || currentTab === 'action-tab') && <span className="active-dot">●</span>}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                id="nav-tab-employee-tasks"
+                type="button"
+                className={`workspace-tab-btn ${(currentTab === 'employee-task' || currentTab === 'action-tab') ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentTab('employee-task');
+                  setOpenDropdown(null);
+                  setIsPinned(false);
+                }}
+              >
+                Employee Tasks
+              </button>
+            )}
 
             {/* Enrollment Tab */}
             <button

@@ -1,12 +1,12 @@
 // /api/import-excel/ (and the /api/import-csv/ alias): create or update tasks from a spreadsheet.
 import express from 'express';
 import multer from 'multer';
-import { route } from '../http.js';
+import { HttpError, route } from '../http.js';
 import { extractRecords } from '../import/extract.js';
 import { isTruthy, pyStr } from '../lib/py.js';
 import { makeIsoDate } from '../lib/time.js';
 import { getTaskByTaskId, insertTask, updateTask } from '../models/tasks.js';
-import { findUserByFuzzyName } from '../models/users.js';
+import { findUserByFuzzyName, isAdmin } from '../models/users.js';
 
 const STATUS_MAP = {
   pending: 'Pending',
@@ -29,7 +29,7 @@ const MONTHS_LONG = [
   'july', 'august', 'september', 'october', 'november', 'december',
 ];
 
-// Year, month and day patterns as Python's strptime matches %Y, %m and %d.
+// Year, month and day patterns for ISO, US/EU slash/dash, and month-name date parsing.
 const Y = '(\\d{4})';
 const M = '(1[0-2]|0[1-9]|[1-9])';
 const D = '(3[01]|[12]\\d|0[1-9]|[1-9]| [1-9])';
@@ -81,7 +81,8 @@ function categoryOf(row, defaultCategory) {
   ) {
     return 'payment_posting';
   }
-  const raw = pyStr(row.has('category') ? row.get('category') : (defaultCategory || 'credentialing'))
+  const categoryCell = row.has('category') ? row.get('category') : (row.has('task_type') ? row.get('task_type') : (defaultCategory || 'credentialing'));
+  const raw = pyStr(categoryCell)
     .toLowerCase()
     .trim()
     .replaceAll(' ', '_')
@@ -129,14 +130,14 @@ async function importRows(db, records, creator, defaultCategory) {
       group_ptan: textOf(row, 'group_ptan'),
       individual_ptan: textOf(row, 'individual_ptan'),
       follow_up_type: followUpTypeOf(row),
-      follow_up_value: textOf(row, 'follow_up_value'),
+      follow_up_value: textOf(row, 'follow_up_value') || textOf(row, 'remarks'),
       status: statusOf(row),
       assignee_id: assignee?.id ?? null,
     };
     const earlyStart = parseDateValue(row.get('early_start_date'));
     const effective = parseDateValue(row.get('provider_effective_date'));
     const created = parseDateValue(row.get('creation_date'));
-    const notes = textOf(row, 'notes');
+    const notes = textOf(row, 'notes') || textOf(row, 'remarks');
     if (earlyStart) values.early_start_date = earlyStart;
     if (effective) values.provider_effective_date = effective;
     if (created) values.creation_date = created;
@@ -145,6 +146,7 @@ async function importRows(db, records, creator, defaultCategory) {
     const existing = taskId ? await getTaskByTaskId(db, taskId) : null;
     const isPaymentPosting = values.category === 'payment_posting';
     if (isPaymentPosting) {
+      const taskTypeText = textOf(row, 'task_type') || textOf(row, 'task_name') || 'Payment Posting';
       const meta = {
         file_name: textOf(row, 'file_name'),
         num_files_ppt: textOf(row, 'num_files_ppt'),
@@ -159,7 +161,7 @@ async function importRows(db, records, creator, defaultCategory) {
       };
       values.notes = JSON.stringify(meta);
       values.insurance_name = textOf(row, 'file_name') || 'Payment Posting';
-      values.task_name = 'Payment Posting';
+      values.task_name = taskTypeText;
       if (meta.sup_qa) values.follow_up_value = meta.sup_qa;
     }
     if (existing) {
@@ -203,7 +205,14 @@ export function importRoutes({ db, logger }) {
     });
   };
 
-  route(router, '/import-excel', { post: [upload, handler] });
-  route(router, '/import-csv', { post: [upload, handler] });
+  const requireAdminImport = (req, _res, next) => {
+    if (!isAdmin(req.user)) {
+      return next(new HttpError(403, { detail: 'Only administrators can import and assign tasks.' }));
+    }
+    return next();
+  };
+
+  route(router, '/import-excel', { post: [requireAdminImport, upload, handler] });
+  route(router, '/import-csv', { post: [requireAdminImport, upload, handler] });
   return router;
 }

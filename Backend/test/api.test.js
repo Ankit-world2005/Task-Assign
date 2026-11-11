@@ -9,8 +9,8 @@ import { openDatabase } from '../src/db/index.js';
 import { checkPassword } from '../src/lib/passwords.js';
 import { nowDb } from '../src/lib/time.js';
 
-// A hash made by Django's make_password('pass123'): existing accounts must keep working.
-const DJANGO_HASH_PASS123 = 'pbkdf2_sha256$1000000$fqSsDxF3WXmHabAd2GaYcV$LmutQqQj5chTtmU2WNibUKlEI4l4WzAWRkuAvGmCbL8=';
+// Standard pbkdf2_sha256 hash for 'pass123': existing accounts keep working.
+const HASHED_PASS123 = 'pbkdf2_sha256$1000000$fqSsDxF3WXmHabAd2GaYcV$LmutQqQj5chTtmU2WNibUKlEI4l4WzAWRkuAvGmCbL8=';
 const silent = { info() {}, warn() {}, error() {} };
 
 let dir;
@@ -24,7 +24,7 @@ async function addUser(username, { admin = false } = {}) {
   const row = await db.get(
     `INSERT INTO auth_user (password, last_login, is_superuser, username, last_name, email, is_staff, is_active, date_joined, first_name)
      VALUES (?, NULL, ?, ?, 'Tester', ?, ?, 1, ?, ?) RETURNING id`,
-    DJANGO_HASH_PASS123,
+    HASHED_PASS123,
     admin,
     username,
     `${username}@example.com`,
@@ -102,9 +102,9 @@ after(async () => {
 });
 
 describe('passwords', () => {
-  test('verifies hashes created by Django', async () => {
-    assert.equal((await checkPassword('pass123', DJANGO_HASH_PASS123)).valid, true);
-    assert.equal((await checkPassword('wrong', DJANGO_HASH_PASS123)).valid, false);
+  test('verifies pbkdf2_sha256 password hashes', async () => {
+    assert.equal((await checkPassword('pass123', HASHED_PASS123)).valid, true);
+    assert.equal((await checkPassword('wrong', HASHED_PASS123)).valid, false);
   });
 });
 
@@ -199,18 +199,49 @@ describe('access control', () => {
     assert.equal((await admin('POST', '/api/auth/users/create/', payload)).status, 400);
   });
 
+  test('only admin sessions can create, import, or reassign tasks', async () => {
+    const employee = client();
+    const alice = await signIn(employee, 'alice');
+    assert.equal((await employee('POST', '/api/tasks/', { project_name: 'P', insurance_name: 'I', assignee: alice.id })).status, 403);
+
+    const form = new FormData();
+    form.append('file', new Blob(['Task Name,Category,Insurance / Payer\nX,ERA/EFT,Aetna\n'], { type: 'text/csv' }), 't.csv');
+    assert.equal((await employee('POST', '/api/import-excel/', form)).status, 403);
+
+    const admin = client();
+    await signIn(admin, 'boss');
+    const created = await admin('POST', '/api/tasks/', { project_name: 'LockTest', insurance_name: 'Aetna', assignee: alice.id });
+    assert.equal(created.status, 201);
+    const taskId = created.data.id;
+
+    assert.equal((await employee('PATCH', `/api/tasks/${taskId}/`, { assignee: ids.bob })).status, 403);
+    assert.equal((await employee('PUT', `/api/tasks/${taskId}/`, { project_name: 'LockTest', insurance_name: 'Aetna', assignee: ids.bob })).status, 403);
+    assert.equal((await employee('POST', `/api/tasks/${taskId}/add-log/`, { reassigned_to: ids.bob, remarks: 'reassign' })).status, 403);
+    assert.equal((await employee('GET', `/api/tasks/${taskId}/`)).data.assignee, alice.id);
+
+    const empUpdate = await employee('POST', `/api/tasks/${taskId}/add-log/`, { status: 'In Process', remarks: 'employee update' });
+    assert.equal(empUpdate.status, 200);
+
+    const adminReassign = await admin('POST', `/api/tasks/${taskId}/add-log/`, { reassigned_to: ids.bob, remarks: 'admin reassign' });
+    assert.equal(adminReassign.status, 200);
+    assert.equal(adminReassign.data.task.assignee, ids.bob);
+  });
+
   test('tasks and updates are recorded under the signed-in user, whatever the client sends', async () => {
-    const api = client();
-    const me = await signIn(api, 'bob');
-    const task = (await api('POST', '/api/tasks/', { project_name: 'P', insurance_name: 'I', created_by: ids.boss })).data;
-    assert.equal(task.created_by, me.id);
-    const update = await api('POST', `/api/tasks/${task.id}/add-log/`, { remarks: 'note', updated_by: ids.boss });
-    assert.equal(update.data.log.updated_by, me.id);
+    const adminApi = client();
+    const boss = await signIn(adminApi, 'boss');
+    const task = (await adminApi('POST', '/api/tasks/', { project_name: 'P', insurance_name: 'I', assignee: ids.bob, created_by: ids.alice })).data;
+    assert.equal(task.created_by, boss.id);
+
+    const bobApi = client();
+    const bob = await signIn(bobApi, 'bob');
+    const update = await bobApi('POST', `/api/tasks/${task.id}/add-log/`, { remarks: 'note', updated_by: ids.boss });
+    assert.equal(update.data.log.updated_by, bob.id);
   });
 
   test('cross-site requests are blocked; allowed origins get CORS headers', async () => {
     const api = client();
-    await signIn(api, 'alice');
+    await signIn(api, 'boss');
     const evil = await api('POST', '/api/tasks/', { project_name: 'P', insurance_name: 'I' }, { 'Sec-Fetch-Site': 'cross-site', Origin: 'http://evil.example' });
     assert.deepEqual([evil.status, evil.data.detail], [403, 'Cross-site request blocked.']);
     const sameOrigin = await api('POST', '/api/tasks/', { project_name: 'P', insurance_name: 'I' }, { 'Sec-Fetch-Site': 'same-origin' });
@@ -225,19 +256,19 @@ describe('access control', () => {
 
 describe('tasks', () => {
   test('create assigns a TSK id and writes the creation log; validation errors keep their shape', async () => {
-    const api = client();
-    const me = await signIn(api, 'alice');
+    const adminApi = client();
+    await signIn(adminApi, 'boss');
 
-    const invalid = await api('POST', '/api/tasks/', {});
+    const invalid = await adminApi('POST', '/api/tasks/', {});
     assert.equal(invalid.status, 400);
     assert.deepEqual(invalid.data.project_name, ['This field is required.']);
     assert.deepEqual(invalid.data.insurance_name, ['This field is required.']);
 
-    const created = await api('POST', '/api/tasks/', {
+    const created = await adminApi('POST', '/api/tasks/', {
       category: 'era_eft',
       project_name: 'Proj',
       insurance_name: 'Payer',
-      assignee: me.id,
+      assignee: ids.alice,
       creation_date: null,
     });
     assert.equal(created.status, 201);
@@ -247,14 +278,19 @@ describe('tasks', () => {
     assert.equal(created.data.logs.length, 1);
     assert.equal(created.data.logs[0].remarks, 'Task initially created and assigned to Alice Tester');
 
-    const listed = await api('GET', '/api/tasks/?category=ERA_EFT&search=pro');
+    const empApi = client();
+    await signIn(empApi, 'alice');
+    const listed = await empApi('GET', '/api/tasks/?category=ERA_EFT&search=pro');
     assert.ok(listed.data.some((t) => t.id === created.data.id));
   });
 
   test('add-log: approval needs portal credentials; schedule sets the follow-up due date', async () => {
+    const adminApi = client();
+    await signIn(adminApi, 'boss');
+    const task = (await adminApi('POST', '/api/tasks/', { category: 'portal_creation', project_name: 'P', insurance_name: 'I', assignee: ids.bob })).data;
+
     const api = client();
     await signIn(api, 'bob');
-    const task = (await api('POST', '/api/tasks/', { category: 'portal_creation', project_name: 'P', insurance_name: 'I' })).data;
 
     const missing = await api('POST', `/api/tasks/${task.id}/add-log/`, { status: 'Approved', remarks: 'x' });
     assert.equal(missing.status, 400);
@@ -314,5 +350,36 @@ describe('import and export', () => {
     assert.ok(exported.data.startsWith('Task ID,Category,Project Name,Task Name,'));
     assert.ok(exported.data.includes(`${task.task_id},ERA/EFT,US24 Solution Project,Imported One,`));
     assert.ok(exported.data.includes(`"'=HYPERLINK(""http://evil.example"")"`));
+  });
+
+  test('payment posting CSV import preserves all 13 columns including Task type and Remarks', async () => {
+    const api = client();
+    await signIn(api, 'boss');
+    const csv =
+      'Date,Project Name,Task type,File Name,Number of File for PPT,DENIALS SS,Remaining,Approx Time Min,Final Time by User,Remarks,Assinged User,Sup QA,Time By Manish\n' +
+      '2026-11-11,ARRA,Denials,Batch_09.pdf,5,Done,1,45,40 min,Check denial note,alice,Approved,10 min\n';
+    const form = new FormData();
+    form.append('file', new Blob([csv], { type: 'text/csv' }), 'pp.csv');
+    form.append('category', 'payment_posting');
+    const res = await api('POST', '/api/import-excel/', form);
+    assert.equal(res.status, 200);
+
+    const rows = (await api('GET', '/api/tasks/?category=payment_posting&search=ARRA')).data;
+    assert.equal(rows.length, 1);
+    const t = rows[0];
+    assert.equal(t.creation_date, '2026-11-11');
+    assert.equal(t.project_name, 'ARRA');
+    assert.equal(t.task_name, 'Denials');
+    assert.equal(t.assignee, ids.alice);
+    const meta = JSON.parse(t.notes);
+    assert.equal(meta.file_name, 'Batch_09.pdf');
+    assert.equal(meta.num_files_ppt, '5');
+    assert.equal(meta.denials_ss, 'Done');
+    assert.equal(meta.remaining, '1');
+    assert.equal(meta.approx_time_min, '45');
+    assert.equal(meta.final_time_user, '40 min');
+    assert.equal(meta.remarks, 'Check denial note');
+    assert.equal(meta.sup_qa, 'Approved');
+    assert.equal(meta.time_by_manish, '10 min');
   });
 });

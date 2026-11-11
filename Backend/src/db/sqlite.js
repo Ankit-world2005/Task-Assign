@@ -7,7 +7,7 @@ import { likeEscape } from '../lib/py.js';
 const SCHEMA_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'schema.sqlite.sql');
 const LIKE = "LIKE ? ESCAPE '\\'";
 
-// SQLite has no boolean type; Django stores booleans as 1/0.
+// SQLite has no native boolean type; booleans are stored as 1/0.
 function bindable(value) {
   if (value === undefined) return null;
   if (typeof value === 'boolean') return value ? 1 : 0;
@@ -27,7 +27,7 @@ export class SqliteDatabase {
 
   constructor(file) {
     this.#raw = new DatabaseSync(file);
-    // Connection settings Django's SQLite backend uses.
+    // SQLite pragmas for referential integrity and lock wait timeout.
     this.#raw.exec('PRAGMA foreign_keys = ON');
     this.#raw.exec('PRAGMA busy_timeout = 5000');
     this.#raw.exec(fs.readFileSync(SCHEMA_PATH, 'utf8'));
@@ -107,7 +107,7 @@ export class SqliteDatabase {
     return this.#hasTable(name);
   }
 
-  // Django's SQLite lookups: iexact and icontains both use LIKE with escaped wildcards.
+  // Case-insensitive SQLite lookups using LIKE with escaped wildcards.
   iexact(column) {
     return `${column} ${LIKE}`;
   }

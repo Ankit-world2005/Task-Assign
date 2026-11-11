@@ -34,7 +34,7 @@ function numberPlaceholders(sql) {
 
 const bindable = (value) => (value === undefined ? null : value);
 
-/** PostgreSQL through a `pg` connection pool, with the session time zone set to UTC like Django. */
+/** PostgreSQL through a `pg` connection pool, with the session time zone set to UTC. */
 export class PostgresDatabase {
   dialect = 'postgres';
   #pool;
@@ -95,7 +95,7 @@ export class PostgresDatabase {
     }
   }
 
-  // Django's PostgreSQL lookups: UPPER(col::text) = UPPER(%s) and UPPER(col::text) LIKE UPPER(%s).
+  // Case-insensitive PostgreSQL lookups: UPPER(col::text) = UPPER(?) and UPPER(col::text) LIKE UPPER(?).
   iexact(column) {
     return `UPPER(${column}::text) = UPPER(?)`;
   }

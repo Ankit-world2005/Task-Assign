@@ -81,7 +81,7 @@ export function createApp({ db, mailer, logger = consoleLogger, debug = false, s
       origin: [...allowedOrigins],
       credentials: true,
       methods: ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
-      allowedHeaders: ['accept', 'authorization', 'content-type', 'user-agent', 'x-csrftoken', 'x-requested-with', 'x-current-user'],
+      allowedHeaders: ['accept', 'authorization', 'content-type', 'user-agent', 'x-requested-with', 'x-current-user'],
       maxAge: 86400,
       optionsSuccessStatus: 200,
     }),

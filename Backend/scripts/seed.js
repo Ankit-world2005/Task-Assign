@@ -1,5 +1,5 @@
 // Creates the demo users and tasks (safe to re-run). Run with: npm run seed
-// Like the original seed_data.py, it resets these users' passwords to pass123 / admin123.
+// Resets the demo users' passwords to pass123 / admin123.
 import { config } from '../src/config.js';
 import { openDatabase } from '../src/db/index.js';
 import { makePassword } from '../src/lib/passwords.js';

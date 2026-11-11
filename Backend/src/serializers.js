@@ -1,4 +1,4 @@
-// JSON shapes identical to the DRF serializers the React app was built against.
+// JSON response serializers for the React portal API.
 import { toApiDatetime } from './lib/time.js';
 import { logsForTasks } from './models/tasks.js';
 import { displayName } from './models/users.js';
@@ -12,7 +12,7 @@ export function serializeUser(user) {
     last_name: user.last_name,
     full_name: displayName(user),
   };
-  // DRF left "profile" out entirely for a user without one.
+  // Omit profile when a user record has no linked profile row.
   if (user.profile) {
     data.profile = {
       role: user.profile.role,

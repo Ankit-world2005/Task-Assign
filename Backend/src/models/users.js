@@ -142,7 +142,7 @@ export async function emailTaken(q, email, excludeId = null) {
   );
 }
 
-/** Django's User.get_full_name(): may be an empty string. */
+/** Full name ("First Last"); may be an empty string. */
 export function fullName(user) {
   return `${user.first_name} ${user.last_name}`.trim();
 }
@@ -223,7 +223,7 @@ export async function insertUser(q, { username, email, firstName = '', lastName 
   return Number(row.id);
 }
 
-/** Checks a password and, like Django, re-hashes it when the stored hash is outdated. */
+/** Checks a password and re-hashes it if the stored iteration count is outdated. */
 export async function verifyUserPassword(q, user, raw) {
   const { valid, mustUpdate } = await checkPassword(raw, user.password);
   if (valid && mustUpdate) {
@@ -233,7 +233,7 @@ export async function verifyUserPassword(q, user, raw) {
   return valid;
 }
 
-/** Deletes a user with Django's on_delete rules: the profile goes, task/log references become NULL. */
+/** Deletes a user cleanly: drops profile and sessions, and clears task/log user references. */
 export async function deleteUser(db, userId) {
   await db.transaction(async (tx) => {
     await tx.run('UPDATE tasks_task SET assignee_id = NULL WHERE assignee_id = ?', userId);

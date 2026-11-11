@@ -36,6 +36,7 @@ export function taskRoutes({ db, logger }) {
   route(router, '/tasks', {
     get: async (req, res) => res.json(await serializeTasks(db, await listTasks(db, req.query, req.user))),
     post: async (req, res) => {
+      if (!isAdmin(req.user)) throw new HttpError(403, { detail: 'Only administrators can assign tasks.' });
       const data = requestData(req);
       const result = await validateTaskInput(db, data);
       if (result.errors) {
@@ -74,6 +75,7 @@ export function taskRoutes({ db, logger }) {
   });
 
   const update = (partial) => async (req, res) => {
+    if (!isAdmin(req.user)) throw new HttpError(403, { detail: 'Only administrators can assign or modify tasks.' });
     const task = await taskOr404(req);
     const result = await validateTaskInput(db, requestData(req), { instance: task, partial });
     if (result.errors) return res.status(400).json(result.errors);
@@ -162,6 +164,9 @@ export function taskRoutes({ db, logger }) {
 
       let reassignedUser = null;
       if (isTruthy(data.reassigned_to)) {
+        if (!isAdmin(req.user)) {
+          throw new HttpError(403, { detail: 'Only administrators can assign or reassign tasks.' });
+        }
         const id = pyInt(data.reassigned_to);
         reassignedUser = id === null ? null : await getUserById(db, id);
         if (reassignedUser) changes.assignee_id = reassignedUser.id;

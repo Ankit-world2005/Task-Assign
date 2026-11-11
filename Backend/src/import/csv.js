@@ -1,7 +1,6 @@
-// CSV reading and writing that behaves like Python's csv module (default "excel" dialect),
-// so imports and exports parse and quote exactly as before.
+// CSV reader and writer supporting standard Excel-dialect quoting and embedded newlines.
 
-const FIELD_LIMIT = 131072; // Python's default csv.field_size_limit()
+const FIELD_LIMIT = 131072;
 
 const START_RECORD = 0;
 const START_FIELD = 1;
@@ -9,7 +8,7 @@ const IN_FIELD = 2;
 const IN_QUOTED_FIELD = 3;
 const QUOTE_IN_QUOTED_FIELD = 4;
 const EAT_CRNL = 5;
-const EOL = null; // end-of-line marker fed after every line, as Python's parser does
+const EOL = null;
 
 /** Parses CSV text into rows of strings; blank lines come back as []. */
 export function parseCsv(text) {

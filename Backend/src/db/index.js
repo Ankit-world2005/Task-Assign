@@ -4,7 +4,7 @@ import { SqliteDatabase } from './sqlite.js';
 /**
  * Opens the configured database and makes sure the tables exist.
  * Both drivers expose the same async interface: get / all / run / transaction / hasTable,
- * plus iexact / iexactValue / icontains for Django's case-insensitive lookups.
+ * plus iexact / iexactValue / icontains for case-insensitive lookups.
  */
 export async function openDatabase(databaseConfig) {
   if (databaseConfig.engine === 'postgres') {

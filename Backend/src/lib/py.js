@@ -1,5 +1,4 @@
-// Small helpers that reproduce the Python semantics the original views relied on
-// (truthiness, str(), int()), so request handling behaves exactly as before.
+// Value coercion and normalization helpers for request payloads and spreadsheet imports.
 
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
@@ -68,7 +67,7 @@ export function charLength(value) {
   return Array.from(value).length;
 }
 
-/** Escapes LIKE wildcards the way Django does for case-insensitive lookups. */
+/** Escapes LIKE wildcards (%, _, \) for case-insensitive pattern lookups. */
 export function likeEscape(value) {
   return pyStr(value).replace(/[\\%_]/g, '\\$&');
 }

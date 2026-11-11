@@ -165,7 +165,7 @@ export async function listTasks(q, query = {}, user = null) {
   return q.all(`SELECT t.* FROM tasks_task t ${clause} ORDER BY t.created_at DESC, t.id DESC`, ...params);
 }
 
-/** Detail lookup; like DRF's get_object(), the list filters in the query string still apply. */
+/** Detail lookup; honors the same list/permission filters from the query string and user context. */
 export async function findTask(q, pk, query = {}, user = null) {
   const id = pyInt(pk);
   if (!Number.isSafeInteger(id)) return null;

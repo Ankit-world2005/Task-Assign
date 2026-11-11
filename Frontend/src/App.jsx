@@ -46,6 +46,8 @@ function AppContent() {
     setCurrentTab('employee-task');
   };
 
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header Bar with Enrollment Category Dropdown */}
@@ -76,25 +78,49 @@ function AppContent() {
           />
         )}
         {currentTab === 'task-portal-creation' && (
-          <TaskAssignTab
-            taskType="task-portal-creation"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-portal-creation"
+              setCurrentTab={setCurrentTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={setCurrentTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
         {currentTab === 'task-era-eft' && (
-          <TaskAssignTab
-            taskType="task-era-eft"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-era-eft"
+              setCurrentTab={setCurrentTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={setCurrentTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
         {currentTab === 'task-password-reset' && (
-          <TaskAssignTab
-            taskType="task-password-reset"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-password-reset"
+              setCurrentTab={setCurrentTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={setCurrentTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
         {(currentTab === 'employee-task' || currentTab === 'action-tab') && (
           <ActionTab

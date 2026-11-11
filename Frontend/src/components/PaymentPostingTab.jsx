@@ -50,9 +50,14 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskForLogs, setSelectedTaskForLogs] = useState(null);
 
-  // Sub-tabs: 'assign' (Task Assign form view) or 'action' (Action Tab queue view).
-  // Staff members default directly to 'action' so they immediately view their assigned tasks.
-  const [activeSubTab, setActiveSubTab] = useState(isStaff ? 'action' : 'assign');
+  // Sub-tabs: 'assign' (Task Assign form view, admin only) or 'action' (Action Tab queue view)
+  const [activeSubTab, setActiveSubTab] = useState(isAdminUser ? 'assign' : 'action');
+
+  useEffect(() => {
+    if (!isAdminUser && activeSubTab !== 'action') {
+      setActiveSubTab('action');
+    }
+  }, [isAdminUser, activeSubTab]);
 
   // Import Tasks State
   const [showImportModal, setShowImportModal] = useState(false);
@@ -72,7 +77,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     approx_time_min: '',
     final_time_user: '',
     remarks: '',
-    assignee_id: isStaff ? (currentUser?.id || '') : '',
+    assignee_id: '',
     sup_qa: '',
     time_by_manish: '',
   });
@@ -114,17 +119,16 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     fetchTasks();
   }, []);
 
-  // Set default assignee
+  // Set default assignee to first employee (Admin Only)
   useEffect(() => {
-    if (isStaff && currentUser?.id) {
-      setFormData((prev) => ({ ...prev, assignee_id: currentUser.id }));
-    } else if (usersList.length > 0 && !formData.assignee_id) {
+    if (!isAdminUser) return;
+    if (usersList.length > 0 && !formData.assignee_id) {
       const staffUser = usersList.find((u) => u.profile?.role === 'employee') || usersList[0];
       if (staffUser) {
         setFormData((prev) => ({ ...prev, assignee_id: staffUser.id }));
       }
     }
-  }, [usersList, isStaff, currentUser]);
+  }, [usersList, isAdminUser]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -247,7 +251,6 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   // Filtered tasks calculation (only assigned tasks visible to staff users)
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
-      // Security & Portal Scoping: staff members strictly only see tasks assigned to them
       if (isStaff && String(t.assignee_id || t.assignee) !== String(currentUser?.id)) {
         return false;
       }
@@ -392,66 +395,68 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </h1>
             </div>
             <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
-              {activeSubTab === 'action'
+              {(activeSubTab === 'action' || isStaff)
                 ? 'Review payment posting queues, update task statuses, and record final times.'
                 : 'Assign payment posting, denials, ERA remittance, and PPT queues.'}
             </p>
           </div>
         </div>
 
-        {/* Header Right: Import Task & Task Toggle Buttons */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => setShowImportModal(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '999px',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: '1px solid var(--border-glass)',
-              background: 'rgba(11, 13, 16, 0.05)',
-              color: 'var(--text-main)',
-              transition: 'all 0.15s ease',
-            }}
-            title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
-          >
-            <span>📤</span>
-            <span>Import Task</span>
-          </button>
+        {/* Header Right: Import Task & Task Toggle Buttons (Admin Only) */}
+        {isAdminUser && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '999px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: '1px solid var(--border-glass)',
+                background: 'rgba(11, 13, 16, 0.05)',
+                color: 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+              title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
+            >
+              <span>📤</span>
+              <span>Import Task</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '999px',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: activeSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-              background: activeSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-              color: activeSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <span>⚡</span>
-            <span>Task</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '999px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: activeSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                background: activeSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                color: activeSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>⚡</span>
+              <span>Task</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
       {/* SUB-TAB 1: ACTION TAB (QUEUE, ACTION CARDS, WORK LOGS)       */}
       {/* ============================================================ */}
-      {activeSubTab === 'action' && (
+      {(activeSubTab === 'action' || isStaff) && (
         <div>
           {/* KPI Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
@@ -498,7 +503,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               />
             </div>
 
-            {/* Staff Queue Filter - Only selectable for admins; staff members see their own assigned queue */}
+            {/* Staff Queue Filter (Admin selects staff; staff see own assigned queue) */}
             {isAdminUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Staff:</label>
@@ -617,17 +622,17 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Task ID</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Date</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Project Name</th>
-                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Task Type</th>
+                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Task type</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>File Name</th>
-                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Files (PPT)</th>
-                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Denials SS</th>
+                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Number of File for PPT</th>
+                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>DENIALS SS</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Remaining</th>
-                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Approx Time</th>
-                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Final Time</th>
+                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Approx Time Min</th>
+                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Final Time by User</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Remarks</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Assigned User</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Sup QA</th>
-                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Time (Manish)</th>
+                    <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Time By Manish</th>
                     <th style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>Quick Status</th>
                     <th style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
                   </tr>
@@ -672,7 +677,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                         </td>
                         <td style={{ padding: '12px 14px' }}>{t.denials_ss || '—'}</td>
                         <td style={{ padding: '12px 14px' }}>{t.remaining || '—'}</td>
-                        <td style={{ padding: '12px 14px' }}>{t.approx_time_min ? `${t.approx_time_min} min` : '—'}</td>
+                        <td style={{ padding: '12px 14px' }}>{t.approx_time_min ? (/min/i.test(t.approx_time_min) ? t.approx_time_min : `${t.approx_time_min} min`) : '—'}</td>
                         <td style={{ padding: '12px 14px', fontWeight: 600, color: t.final_time_user ? '#16a34a' : 'inherit' }}>
                           {t.final_time_user || '—'}
                         </td>
@@ -729,9 +734,9 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       )}
 
       {/* ============================================================ */}
-      {/* SUB-TAB 2: TASK ASSIGN (THE 13 COLUMNS ASSIGNMENT FORM)      */}
+      {/* SUB-TAB 2: TASK ASSIGN (THE 13 COLUMNS ASSIGNMENT FORM, ADMIN ONLY) */}
       {/* ============================================================ */}
-      {activeSubTab === 'assign' && (
+      {isAdminUser && activeSubTab === 'assign' && (
         <div className="glass-panel" style={{ padding: '2rem 2.5rem', borderRadius: '12px' }}>
           {/* The 13 Columns Form */}
           <form onSubmit={handleSubmit}>
@@ -767,9 +772,9 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                   />
                 </div>
 
-                {/* 3. Task Type */}
+                {/* 3. Task type */}
                 <div className="compact-form-group">
-                  <label className="compact-form-label">Task Type</label>
+                  <label className="compact-form-label">Task type</label>
                   <input
                     type="text"
                     className="compact-form-input"
@@ -839,7 +844,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
 
                 {/* 8. Approx Time Min */}
                 <div className="compact-form-group">
-                  <label className="compact-form-label">Approx Time (Min)</label>
+                  <label className="compact-form-label">Approx Time Min</label>
                   <input
                     type="text"
                     className="compact-form-input"
@@ -851,40 +856,53 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </div>
             </div>
 
-            {/* Row 3: Assignment, QA & Staff Time Tracking */}
-            <div className="form-section-card" style={{ marginBottom: '1rem' }}>
+            {/* Row 3: Final Time, Remarks, Assignment & QA Details (Columns 9–13 in exact Excel order) */}
+            <div className="form-section-card" style={{ marginBottom: '1.5rem' }}>
               <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
                 <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
-                  <span>👤 3. Staff Assignment & QA Details</span>
+                  <span>👤 3. Time, Remarks & Assignment Details</span>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                {/* 9. Final Time by User */}
+                <div className="compact-form-group">
+                  <label className="compact-form-label">Final Time by User</label>
+                  <input
+                    type="text"
+                    className="compact-form-input"
+                    value={formData.final_time_user}
+                    onChange={(e) => handleChange('final_time_user', e.target.value)}
+                    placeholder="e.g. 40 min"
+                  />
+                </div>
+
+                {/* 10. Remarks */}
+                <div className="compact-form-group">
+                  <label className="compact-form-label">Remarks</label>
+                  <input
+                    type="text"
+                    className="compact-form-input"
+                    value={formData.remarks}
+                    onChange={(e) => handleChange('remarks', e.target.value)}
+                    placeholder="Enter remarks, instructions, batch notes..."
+                  />
+                </div>
+
                 {/* 11. Assigned User */}
                 <div className="compact-form-group">
-                  <label className="compact-form-label">
-                    Assigned User * {isStaff && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>(Assigned to You)</span>}
-                  </label>
+                  <label className="compact-form-label">Assigned User *</label>
                   <select
                     className="compact-form-select"
                     value={formData.assignee_id}
                     onChange={(e) => handleChange('assignee_id', e.target.value)}
-                    disabled={isStaff}
                     required
                   >
-                    {isStaff ? (
-                      <option value={currentUser?.id}>
-                        {currentUser?.full_name || currentUser?.username} ({currentUser?.profile?.employee_id || 'Staff'})
+                    <option value="">Select Employee...</option>
+                    {usersList.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name || u.username} ({u.profile?.role || 'staff'})
                       </option>
-                    ) : (
-                      <>
-                        <option value="">Select Employee...</option>
-                        {usersList.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.full_name || u.username} ({u.profile?.role || 'staff'})
-                          </option>
-                        ))}
-                      </>
-                    )}
+                    ))}
                   </select>
                 </div>
 
@@ -911,33 +929,6 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                     placeholder="e.g. 10 min"
                   />
                 </div>
-
-                {/* 9. Final Time by User */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Final Time by User</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.final_time_user}
-                    onChange={(e) => handleChange('final_time_user', e.target.value)}
-                    placeholder="e.g. 40 min"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 4: Remarks (Column 10) */}
-            <div className="form-section-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="compact-form-group">
-                <label className="compact-form-label">Remarks</label>
-                <textarea
-                  rows="2"
-                  className="compact-form-input"
-                  style={{ resize: 'vertical' }}
-                  value={formData.remarks}
-                  onChange={(e) => handleChange('remarks', e.target.value)}
-                  placeholder="Enter remarks, special instructions, batch notes..."
-                />
               </div>
             </div>
 
@@ -964,8 +955,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
         </div>
       )}
 
-      {/* Import Tasks Modal */}
-      {showImportModal && (
+      {/* Import Tasks Modal (Admin Only) */}
+      {isAdminUser && showImportModal && (
         <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
           <div
             className="glass-panel"

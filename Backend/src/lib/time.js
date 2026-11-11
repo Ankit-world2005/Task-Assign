@@ -1,4 +1,4 @@
-// The app runs in UTC (Django had TIME_ZONE='UTC', USE_TZ=True). Datetimes are stored as
+// All timestamps run in UTC. Datetimes are stored as
 // 'YYYY-MM-DD HH:MM:SS.ffffff' and returned by the API as 'YYYY-MM-DDTHH:MM:SS.ffffffZ'.
 
 const pad = (n, width = 2) => String(n).padStart(width, '0');
@@ -65,7 +65,7 @@ export function makeIsoDate(year, month, day) {
   return `${pad(year, 4)}-${pad(month)}-${pad(day)}`;
 }
 
-/** Django's parse_date(): 'YYYY-MM-DD', 'YYYYMMDD' or 'YYYY-M-D'. Null when invalid. */
+/** Parses 'YYYY-MM-DD', 'YYYYMMDD' or 'YYYY-M-D' dates. Null when invalid. */
 export function parseIsoDate(value) {
   if (typeof value !== 'string') return null;
   const match =

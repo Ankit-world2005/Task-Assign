@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Like python-dotenv's load_dotenv(): the file is optional and real environment variables win.
+// Load .env if present (process environment variables always take precedence).
 try {
   process.loadEnvFile(path.join(ROOT_DIR, '.env'));
 } catch (err) {
@@ -15,8 +15,8 @@ const emailUser = (env.EMAIL_HOST_USER ?? '').trim();
 const emailPassword = (env.EMAIL_HOST_PASSWORD ?? '').trim();
 const smtpEnabled = Boolean(emailUser && emailPassword);
 
-// Same rule as the Django settings: PostgreSQL when DB_ENGINE=postgres or DB_NAME is set, else SQLite.
-const usePostgres = (env.DB_ENGINE ?? '') === 'postgres' || Boolean(env.DB_NAME);
+// Use PostgreSQL when DB_ENGINE=postgres or DB_NAME is set (unless DB_ENGINE=sqlite), else SQLite.
+const usePostgres = (env.DB_ENGINE ?? '') !== 'sqlite' && ((env.DB_ENGINE ?? '') === 'postgres' || Boolean(env.DB_NAME));
 
 const isOn = (value) => ['true', '1', 'yes', 'on'].includes(String(value ?? '').trim().toLowerCase());
 

@@ -133,8 +133,14 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
     return fallback;
   };
 
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+
   // Fetch all assigned tasks for this task type
   const fetchAssignedTasks = async () => {
+    if (!isAdminUser) {
+      setTasksLoading(false);
+      return;
+    }
     try {
       setTasksLoading(true);
       const tasks = await api.getTasks();
@@ -168,19 +174,39 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
     setJustAssignedId(null);
   }, [taskType]);
 
-  const isAdminUser = currentUser?.profile?.role === 'admin';
-
-  // Set default assignee to current user (for staff) or first staff employee (for admin)
   useEffect(() => {
-    if (!isAdminUser && currentUser?.id) {
-      setFormData((prev) => ({ ...prev, assignee: currentUser.id }));
-    } else if (usersList.length > 0 && !formData.assignee) {
+    if (!isAdminUser) return;
+    if (usersList.length > 0 && !formData.assignee) {
       const staffUser = usersList.find((u) => u.profile?.role === 'employee') || usersList[0];
       if (staffUser) {
         setFormData((prev) => ({ ...prev, assignee: staffUser.id }));
       }
     }
-  }, [usersList, isAdminUser, currentUser]);
+  }, [usersList, isAdminUser]);
+
+  if (!isAdminUser) {
+    return (
+      <div style={{ maxWidth: '640px', margin: '2rem auto' }}>
+        <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2.25rem', marginBottom: '0.75rem' }}>🔒</div>
+          <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--serif)', color: 'var(--ink)', margin: '0 0 0.5rem 0' }}>
+            Administrator Access Required
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+            Only administrators can assign tasks. You can review and update your assigned tasks in Employee Tasks.
+          </p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setCurrentTab('employee-task')}
+            style={{ padding: '8px 18px', fontSize: '0.86rem' }}
+          >
+            Go to Employee Tasks
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

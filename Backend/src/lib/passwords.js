@@ -1,12 +1,11 @@
-// Django-compatible password hashes: pbkdf2_sha256$<iterations>$<salt>$<base64 hash>.
-// Existing users keep their passwords.
+// PBKDF2-SHA256 password hashes: pbkdf2_sha256$<iterations>$<salt>$<base64 hash>.
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 
 const pbkdf2 = promisify(crypto.pbkdf2);
 
 const ALGORITHM = 'pbkdf2_sha256';
-const ITERATIONS = 1_000_000; // Django 5.2 default
+const ITERATIONS = 1_000_000;
 const SALT_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const SALT_LENGTH = 22;
 
