@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import './index.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import LoginModal from './components/LoginModal';
 import LoginPage from './components/LoginPage';
 import DashboardTab from './components/DashboardTab';
 import TaskAssignTab from './components/TaskAssignTab';
@@ -10,6 +9,7 @@ import ActionTab from './components/ActionTab';
 import EnrollmentTab from './components/EnrollmentTab';
 import UsersTab from './components/UsersTab';
 import ProfileDashboard from './components/ProfileDashboard';
+import PaymentPostingTab from './components/PaymentPostingTab';
 
 function AppContent() {
   const { currentUser, isLoading } = useAuth();
@@ -46,6 +46,8 @@ function AppContent() {
     setCurrentTab('employee-task');
   };
 
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Header Bar with Enrollment Category Dropdown */}
@@ -76,25 +78,49 @@ function AppContent() {
           />
         )}
         {currentTab === 'task-portal-creation' && (
-          <TaskAssignTab
-            taskType="task-portal-creation"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-portal-creation"
+              setCurrentTab={setCurrentTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={setCurrentTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
         {currentTab === 'task-era-eft' && (
-          <TaskAssignTab
-            taskType="task-era-eft"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-era-eft"
+              setCurrentTab={setCurrentTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={setCurrentTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
         {currentTab === 'task-password-reset' && (
-          <TaskAssignTab
-            taskType="task-password-reset"
-            setCurrentTab={setCurrentTab}
-            onSelectStaff={handleSelectStaff}
-          />
+          isAdminUser ? (
+            <TaskAssignTab
+              taskType="task-password-reset"
+              setCurrentTab={setCurrentTab}
+              onSelectStaff={handleSelectStaff}
+            />
+          ) : (
+            <ActionTab
+              setCurrentTab={setCurrentTab}
+              selectedStaffUser={selectedStaffUser}
+              setSelectedStaffUser={setSelectedStaffUser}
+            />
+          )
         )}
         {(currentTab === 'employee-task' || currentTab === 'action-tab') && (
           <ActionTab
@@ -111,13 +137,16 @@ function AppContent() {
             onSelectStaff={handleSelectStaff}
           />
         )}
+        {currentTab === 'payment-posting' && (
+          <PaymentPostingTab
+            setCurrentTab={setCurrentTab}
+            onSelectStaff={handleSelectStaff}
+          />
+        )}
         {currentTab === 'users' && currentUser?.profile?.role === 'admin' && (
           <UsersTab />
         )}
       </main>
-
-      {/* 2-Step OTP Authentication Modal */}
-      <LoginModal />
 
       {/* Footer */}
       <footer className="footer">

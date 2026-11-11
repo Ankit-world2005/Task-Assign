@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import TaskLogsModal from './TaskLogsModal';
 import { FINISHED_STATUSES, isFollowUpOverdue } from '../utils/followUp';
 import { formatDate } from '../utils/dateFormat';
+import StatusBadge from './StatusBadge';
 
 export const ProfileDashboard = ({ setCurrentTab }) => {
   const { currentUser } = useAuth();
@@ -430,9 +431,7 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
                           ) : (
                             <span className="task-timing-badge old">Old</span>
                           )}
-                          <span className={`status-badge ${(task.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                            {task.status || 'Request'}
-                          </span>
+                          <StatusBadge status={task.status} />
                         </div>
                       </div>
 

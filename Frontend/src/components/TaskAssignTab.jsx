@@ -5,6 +5,7 @@ import TaskLogsModal from './TaskLogsModal';
 import { ImagePasteRemarks } from './ImagePasteRemarks';
 import { formatDate } from '../utils/dateFormat';
 import DateInput from './DateInput';
+import StatusBadge from './StatusBadge';
 
 // Task type configuration map
 const TASK_TYPE_CONFIG = {
@@ -132,8 +133,14 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
     return fallback;
   };
 
+  const isAdminUser = currentUser?.profile?.role === 'admin';
+
   // Fetch all assigned tasks for this task type
   const fetchAssignedTasks = async () => {
+    if (!isAdminUser) {
+      setTasksLoading(false);
+      return;
+    }
     try {
       setTasksLoading(true);
       const tasks = await api.getTasks();
@@ -167,15 +174,39 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
     setJustAssignedId(null);
   }, [taskType]);
 
-  // Set default assignee to first staff employee
   useEffect(() => {
+    if (!isAdminUser) return;
     if (usersList.length > 0 && !formData.assignee) {
       const staffUser = usersList.find((u) => u.profile?.role === 'employee') || usersList[0];
       if (staffUser) {
         setFormData((prev) => ({ ...prev, assignee: staffUser.id }));
       }
     }
-  }, [usersList]);
+  }, [usersList, isAdminUser]);
+
+  if (!isAdminUser) {
+    return (
+      <div style={{ maxWidth: '640px', margin: '2rem auto' }}>
+        <div className="glass-panel" style={{ padding: '2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2.25rem', marginBottom: '0.75rem' }}>🔒</div>
+          <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--serif)', color: 'var(--ink)', margin: '0 0 0.5rem 0' }}>
+            Administrator Access Required
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+            Only administrators can assign tasks. You can review and update your assigned tasks in Employee Tasks.
+          </p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setCurrentTab('employee-task')}
+            style={{ padding: '8px 18px', fontSize: '0.86rem' }}
+          >
+            Go to Employee Tasks
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -604,9 +635,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                       <td className="cell-date">{formatDate(t.creation_date, '—')}</td>
 
                       <td>
-                        <span className={`status-badge ${(t.status || 'Request').toLowerCase().replace(/\s+/g, '-')}`}>
-                          {t.status || 'Request'}
-                        </span>
+                        <StatusBadge status={t.status} />
                       </td>
 
                       <td className="cell-align-right">

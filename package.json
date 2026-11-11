@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev:backend": "cd Backend && .venv\\Scripts\\python.exe manage.py runserver 127.0.0.1:8001",
+    "dev:backend": "cd Backend && npm start",
     "dev:frontend": "cd Frontend && npm run dev",
     "start": "start.bat"
   }

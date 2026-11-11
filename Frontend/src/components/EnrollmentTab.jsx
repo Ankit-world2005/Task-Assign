@@ -6,6 +6,7 @@ import { ImagePasteRemarks } from './ImagePasteRemarks';
 import { printEnrollmentsReport } from '../utils/printHelper';
 import { formatDate, formatDateTime } from '../utils/dateFormat';
 import DateInput from './DateInput';
+import StatusBadge from './StatusBadge';
 
 const CREDENTIALING_PROJECTS = [
   'Hari Kisan',
@@ -19,6 +20,7 @@ const CREDENTIALING_PROJECTS = [
 
 export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActiveCategory, onSelectStaff }) => {
   const { usersList, currentUser } = useAuth();
+  const isAdminUser = currentUser?.profile?.role === 'admin';
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -471,47 +473,51 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
           >
             📊 Export Excel
           </button>
-          <button
-            className="btn-secondary"
-            onClick={() => setShowImportModal(true)}
-            style={{ padding: '8px 13px', fontSize: '0.84rem' }}
-            title="Upload Excel (.xlsx, .xls) or spreadsheet to bulk import tasks"
-          >
-            📤 Import Excel
-          </button>
-          {category === 'portal_creation' ? (
-            <button
-              className="btn-primary"
-              onClick={() => handleOpenNewEnrollmentModal('portal_creation')}
-              style={{ padding: '8px 16px', fontSize: '0.84rem', fontWeight: 700 }}
-            >
-              + New Portal Creation Task
-            </button>
-          ) : category === 'credentialing' ? (
-            <button
-              className="btn-primary"
-              onClick={() => handleOpenNewEnrollmentModal('credentialing')}
-              style={{ padding: '8px 16px', fontSize: '0.84rem', fontWeight: 700 }}
-            >
-              + New Credentialing Task
-            </button>
-          ) : (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                className="btn-primary"
-                onClick={() => handleOpenNewEnrollmentModal('credentialing')}
-                style={{ padding: '8px 14px', fontSize: '0.84rem', fontWeight: 700 }}
-              >
-                + New Credentialing Task
-              </button>
+          {isAdminUser && (
+            <>
               <button
                 className="btn-secondary"
-                onClick={() => handleOpenNewEnrollmentModal('portal_creation')}
-                style={{ padding: '8px 14px', fontSize: '0.84rem', fontWeight: 600 }}
+                onClick={() => setShowImportModal(true)}
+                style={{ padding: '8px 13px', fontSize: '0.84rem' }}
+                title="Upload Excel (.xlsx, .xls) or spreadsheet to bulk import tasks"
               >
-                + New Portal Task
+                📤 Import Excel
               </button>
-            </div>
+              {category === 'portal_creation' ? (
+                <button
+                  className="btn-primary"
+                  onClick={() => handleOpenNewEnrollmentModal('portal_creation')}
+                  style={{ padding: '8px 16px', fontSize: '0.84rem', fontWeight: 700 }}
+                >
+                  + New Portal Creation Task
+                </button>
+              ) : category === 'credentialing' ? (
+                <button
+                  className="btn-primary"
+                  onClick={() => handleOpenNewEnrollmentModal('credentialing')}
+                  style={{ padding: '8px 16px', fontSize: '0.84rem', fontWeight: 700 }}
+                >
+                  + New Credentialing Task
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => handleOpenNewEnrollmentModal('credentialing')}
+                    style={{ padding: '8px 14px', fontSize: '0.84rem', fontWeight: 700 }}
+                  >
+                    + New Credentialing Task
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => handleOpenNewEnrollmentModal('portal_creation')}
+                    style={{ padding: '8px 14px', fontSize: '0.84rem', fontWeight: 600 }}
+                  >
+                    + New Portal Task
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -629,9 +635,7 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
                     </td>
 
                     <td>
-                      <span className={`status-badge ${(task.status || 'request').toLowerCase().replace(/\s+/g, '-')}`}>
-                        {task.status || 'Request'}
-                      </span>
+                      <StatusBadge status={task.status} />
                     </td>
 
                     <td style={{ textAlign: 'right' }}>
@@ -652,9 +656,9 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
       </div>
 
       {/* ========================================================================= */}
-      {/* NEW ENROLLMENT TASK MODAL (Structured Sections & Compact Space Management) */}
+      {/* NEW ENROLLMENT TASK MODAL (Admin Only)                                    */}
       {/* ========================================================================= */}
-      {showNewEnrollmentModal && (
+      {isAdminUser && showNewEnrollmentModal && (
         <div className="modal-overlay" onClick={() => setShowNewEnrollmentModal(false)}>
           <div
             className="glass-panel"
@@ -1112,8 +1116,8 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
         </div>
       )}
 
-      {/* Excel Import Modal */}
-      {showImportModal && (
+      {/* Excel Import Modal (Admin Only) */}
+      {isAdminUser && showImportModal && (
         <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
           <div
             className="glass-panel"

@@ -1,0 +1,18 @@
+-- Node.js + Express SQLite schema for US24 Operations Portal.
+
+CREATE TABLE IF NOT EXISTS "auth_user" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "password" varchar(128) NOT NULL, "last_login" datetime NULL, "is_superuser" bool NOT NULL, "username" varchar(150) NOT NULL UNIQUE, "last_name" varchar(150) NOT NULL, "email" varchar(254) NOT NULL, "is_staff" bool NOT NULL, "is_active" bool NOT NULL, "date_joined" datetime NOT NULL, "first_name" varchar(150) NOT NULL);
+
+CREATE TABLE IF NOT EXISTS "tasks_userprofile" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "role" varchar(20) NOT NULL, "employee_id" varchar(50) NOT NULL, "phone" varchar(20) NOT NULL, "department" varchar(100) NOT NULL, "avatar_color" varchar(20) NOT NULL, "current_otp" varchar(6) NULL, "user_id" integer NOT NULL UNIQUE REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED, "otp_created_at" datetime NULL);
+
+CREATE TABLE IF NOT EXISTS "tasks_task" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "task_id" varchar(50) NOT NULL UNIQUE, "category" varchar(50) NOT NULL, "project_name" varchar(255) NOT NULL, "task_name" varchar(255) NOT NULL, "sub_plan" varchar(255) NOT NULL, "insurance_name" varchar(255) NOT NULL, "creation_date" date NOT NULL, "follow_up_type" varchar(20) NOT NULL, "follow_up_value" varchar(255) NOT NULL, "status" varchar(50) NOT NULL, "notes" text NOT NULL, "created_at" datetime NOT NULL, "updated_at" datetime NOT NULL, "assignee_id" integer NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED, "created_by_id" integer NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED, "provider_name" varchar(255) NULL, "early_start_date" date NULL, "group_ptan" varchar(100) NOT NULL, "individual_ptan" varchar(100) NOT NULL, "provider_effective_date" date NULL, "attachment" text NULL, "follow_up_days" integer unsigned NULL CHECK ("follow_up_days" >= 0), "follow_up_due_date" date NULL, "portal_link" varchar(500) NOT NULL, "portal_password" varchar(255) NOT NULL, "portal_user_id" varchar(255) NOT NULL, "work_date" date NULL);
+CREATE INDEX IF NOT EXISTS "tasks_task_assignee_id_2c3ca866" ON "tasks_task" ("assignee_id");
+CREATE INDEX IF NOT EXISTS "tasks_task_created_by_id_1345568a" ON "tasks_task" ("created_by_id");
+
+CREATE TABLE IF NOT EXISTS "tasks_tasklog" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "previous_status" varchar(50) NOT NULL, "new_status" varchar(50) NOT NULL, "created_at" datetime NOT NULL, "reassigned_to_id" integer NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED, "task_id" bigint NOT NULL REFERENCES "tasks_task" ("id") DEFERRABLE INITIALLY DEFERRED, "updated_by_id" integer NULL REFERENCES "auth_user" ("id") DEFERRABLE INITIALLY DEFERRED, "attachment" text NULL, "follow_up_days" integer unsigned NULL CHECK ("follow_up_days" >= 0), "moc" varchar(20) NOT NULL, "portal_link" varchar(500) NOT NULL, "portal_password" varchar(255) NOT NULL, "portal_user_id" varchar(255) NOT NULL, "tat" varchar(20) NOT NULL, "work_date" date NULL, "remarks" text NOT NULL);
+CREATE INDEX IF NOT EXISTS "tasks_tasklog_reassigned_to_id_8b8e162b" ON "tasks_tasklog" ("reassigned_to_id");
+CREATE INDEX IF NOT EXISTS "tasks_tasklog_task_id_94d5b7eb" ON "tasks_tasklog" ("task_id");
+CREATE INDEX IF NOT EXISTS "tasks_tasklog_updated_by_id_40bc68f1" ON "tasks_tasklog" ("updated_by_id");
+
+-- Login sessions for Node.js + Express authentication.
+CREATE TABLE IF NOT EXISTS "node_session" ("session_key" varchar(64) NOT NULL PRIMARY KEY, "user_id" integer NOT NULL REFERENCES "auth_user" ("id") ON DELETE CASCADE, "auth_hash" varchar(64) NOT NULL, "expire_date" datetime NOT NULL);
+CREATE INDEX IF NOT EXISTS "node_session_expire_date" ON "node_session" ("expire_date");
