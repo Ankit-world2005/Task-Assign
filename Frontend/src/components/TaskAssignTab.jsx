@@ -80,6 +80,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
     project_name: '',
     insurance_name: '',
     sub_plan: '',
+    address: '',
     assignee: '',
     notes: '',
     attachment: null,
@@ -226,6 +227,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
         project_name: formData.project_name,
         insurance_name: formData.insurance_name,
         sub_plan: formData.sub_plan || '',
+        address: formData.address || '',
         provider_name: '',
         assignee: formData.assignee ? parseInt(formData.assignee) : null,
         creation_date: formData.creation_date || null,
@@ -251,6 +253,7 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
         project_name: '',
         insurance_name: '',
         sub_plan: '',
+        address: '',
         notes: '',
         attachment: null,
       }));
@@ -470,6 +473,18 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                 </select>
               </div>
             </div>
+
+            <div className="compact-form-group" style={{ marginTop: '0.65rem' }}>
+              <label className="compact-form-label" htmlFor="assign-address">Address</label>
+              <input
+                id="assign-address"
+                type="text"
+                className="compact-form-input"
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                placeholder="e.g. 123 Main St, Suite 200, Chicago, IL 60601"
+              />
+            </div>
           </div>
 
           {/* Row 3: Remark with Image Paste */}
@@ -611,6 +626,11 @@ export const TaskAssignTab = ({ taskType, setCurrentTab, onSelectStaff }) => {
                         {t.sub_plan && (
                           <span className="cell-secondary cell-truncate" title={t.sub_plan}>
                             {t.sub_plan}
+                          </span>
+                        )}
+                        {t.address && (
+                          <span className="cell-secondary cell-truncate" title={t.address}>
+                            {t.address}
                           </span>
                         )}
                       </td>

@@ -5,6 +5,7 @@ import StatusBadge from './StatusBadge';
 import TaskLogsModal from './TaskLogsModal';
 import DateInput from './DateInput';
 import { formatDate } from '../utils/dateFormat';
+import { canAccessCategory } from '../utils/departments';
 
 /**
  * Extracts Payment Posting metadata fields safely from the task record's notes.
@@ -88,7 +89,17 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [importAssigneeId, setImportAssigneeId] = useState('');
   const fileInputRef = useRef(null);
+
+  // Payment Posting users (employees with Payment Posting access first, then admins)
+  const paymentPostingUsers = useMemo(
+    () =>
+      usersList
+        .filter((u) => canAccessCategory(u, 'payment_posting'))
+        .sort((a, b) => Number(a.profile?.role === 'admin') - Number(b.profile?.role === 'admin')),
+    [usersList]
+  );
 
   // Form state matching the 13 Excel columns
   const [formData, setFormData] = useState({
@@ -271,16 +282,10 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     fetchCheckSheet();
   }, []);
 
-  // Set default assignee to first employee (Admin Only)
-  useEffect(() => {
-    if (!isAdminUser) return;
-    if (usersList.length > 0 && !formData.assignee_id) {
-      const staffUser = usersList.find((u) => u.profile?.role === 'employee') || usersList[0];
-      if (staffUser) {
-        setFormData((prev) => ({ ...prev, assignee_id: staffUser.id }));
-      }
-    }
-  }, [usersList, isAdminUser]);
+  // Default assignee derived during render to avoid redundant effect state sync
+  const defaultAssigneeId =
+    paymentPostingUsers.find((u) => u.profile?.role === 'employee')?.id ?? paymentPostingUsers[0]?.id ?? '';
+  const selectedAssigneeId = formData.assignee_id || (defaultAssigneeId ? String(defaultAssigneeId) : '');
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -295,7 +300,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     setImportMsg('');
 
     try {
-      const res = await api.importExcel(file, 'payment_posting');
+      const res = await api.importExcel(file, 'payment_posting', importAssigneeId);
       const msg = res.message || 'Payment Posting tasks imported successfully!';
       setImportMsg(msg);
       showFeedback('success', msg);
@@ -328,7 +333,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
         insurance_name: formData.file_name.trim() || 'Payment Posting',
         sub_plan: formData.num_files_ppt ? `Files: ${formData.num_files_ppt}` : '',
         creation_date: formData.date || new Date().toISOString().split('T')[0],
-        assignee: formData.assignee_id ? parseInt(formData.assignee_id) : null,
+        assignee: selectedAssigneeId ? parseInt(selectedAssigneeId, 10) : null,
         status: 'Assigned',
         notes: JSON.stringify({
           file_name: formData.file_name || '',
@@ -1099,14 +1104,14 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                   <label className="compact-form-label">Assigned User *</label>
                   <select
                     className="compact-form-select"
-                    value={formData.assignee_id}
+                    value={selectedAssigneeId}
                     onChange={(e) => handleChange('assignee_id', e.target.value)}
                     required
                   >
                     <option value="">Select Employee...</option>
-                    {usersList.map((u) => (
+                    {paymentPostingUsers.map((u) => (
                       <option key={u.id} value={u.id}>
-                        {u.full_name || u.username} ({u.profile?.role || 'staff'})
+                        {u.full_name || u.username} ({u.profile?.role === 'admin' ? 'Admin' : 'Payment Posting'})
                       </option>
                     ))}
                   </select>
@@ -1621,9 +1626,29 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </button>
             </div>
 
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: 1.5 }}>
               Select or drop your Microsoft Excel (.xlsx, .xls) or CSV spreadsheet file to bulk import Payment Posting tasks into the queue.
             </p>
+
+            <div className="compact-form-group" style={{ marginBottom: '1rem' }}>
+              <label className="compact-form-label" htmlFor="pp-import-assignee">
+                Assign User (Payment Posting)
+              </label>
+              <select
+                id="pp-import-assignee"
+                className="form-select"
+                value={importAssigneeId}
+                onChange={(e) => setImportAssigneeId(e.target.value)}
+                disabled={importing}
+              >
+                <option value="">Use spreadsheet Assigned User (or Unassigned)</option>
+                {paymentPostingUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.full_name || u.username} ({u.profile?.role === 'admin' ? 'Admin' : 'Payment Posting'})
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <input
               type="file"
@@ -1684,6 +1709,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                 onClick={() => {
                   setShowImportModal(false);
                   setImportMsg('');
+                  setImportAssigneeId('');
                 }}
                 style={{ padding: '7px 16px', fontSize: '0.84rem' }}
               >

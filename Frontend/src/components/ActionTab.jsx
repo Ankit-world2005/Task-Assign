@@ -477,6 +477,15 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                       </div>
                     </div>
 
+                    {task.address && (
+                      <div>
+                        <div className="emp-task-field-label">Address</div>
+                        <div className="emp-task-field-val">
+                          {task.address}
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <div className="emp-task-field-label">Sub-Plan</div>
                       <div className="emp-task-field-val">

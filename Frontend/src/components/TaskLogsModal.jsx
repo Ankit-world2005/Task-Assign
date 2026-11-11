@@ -840,6 +840,13 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
                 </div>
               </div>
 
+              {currentTask.address && (
+                <div className="spec-field" style={{ marginTop: '0.5rem' }}>
+                  <div className="spec-label">Address</div>
+                  <div className="spec-value" style={{ fontSize: '0.82rem' }}>{currentTask.address}</div>
+                </div>
+              )}
+
               {/* Assignee & Creation Date 2-Col Grid */}
               <div className="spec-2col-grid">
                 <div className="spec-field">

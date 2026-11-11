@@ -31,6 +31,10 @@ export class SqliteDatabase {
     this.#raw.exec('PRAGMA foreign_keys = ON');
     this.#raw.exec('PRAGMA busy_timeout = 5000');
     this.#raw.exec(fs.readFileSync(SCHEMA_PATH, 'utf8'));
+    const taskCols = this.#raw.prepare('PRAGMA table_info("tasks_task")').all();
+    if (!taskCols.some((c) => c.name === 'address')) {
+      this.#raw.exec('ALTER TABLE "tasks_task" ADD COLUMN "address" varchar(500) NOT NULL DEFAULT \'\'');
+    }
     this.#tx = this.#handle();
   }
 

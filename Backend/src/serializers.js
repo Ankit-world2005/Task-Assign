@@ -75,6 +75,7 @@ function serializeTaskRow(task, logs, names) {
     individual_ptan: task.individual_ptan,
     early_start_date: task.early_start_date || null,
     sub_plan: task.sub_plan,
+    address: task.address || '',
     insurance_name: task.insurance_name,
     creation_date: task.creation_date || null,
     assignee: task.assignee_id,

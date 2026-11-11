@@ -3,10 +3,10 @@ import express from 'express';
 import multer from 'multer';
 import { HttpError, route } from '../http.js';
 import { extractRecords } from '../import/extract.js';
-import { isTruthy, pyStr } from '../lib/py.js';
+import { isTruthy, pyInt, pyStr } from '../lib/py.js';
 import { makeIsoDate } from '../lib/time.js';
 import { getTaskByTaskId, insertTask, updateTask } from '../models/tasks.js';
-import { findUserByFuzzyName, isAdmin } from '../models/users.js';
+import { canAccessTaskCategory, displayName, findUserByFuzzyName, getUserById, isAdmin } from '../models/users.js';
 
 const STATUS_MAP = {
   pending: 'Pending',
@@ -108,7 +108,7 @@ function statusOf(row) {
 }
 
 /** Each row is saved on its own, as before (rows saved before a failing row stay saved). */
-async function importRows(db, records, creator, defaultCategory) {
+async function importRows(db, records, creator, defaultCategory, overrideAssignee = null) {
   for (const row of records) {
     const rawTaskId = row.get('task_id');
     const rawText = rawTaskId === null || rawTaskId === undefined ? '' : pyStr(rawTaskId).trim();
@@ -116,9 +116,10 @@ async function importRows(db, records, creator, defaultCategory) {
 
     const assigneeName = textOf(row, 'assignee');
     const assignee =
-      assigneeName && !['none', 'unassigned', '-', ''].includes(assigneeName.toLowerCase())
+      overrideAssignee ??
+      (assigneeName && !['none', 'unassigned', '-', ''].includes(assigneeName.toLowerCase())
         ? await findUserByFuzzyName(db, assigneeName)
-        : null;
+        : null);
 
     const values = {
       category: categoryOf(row, defaultCategory),
@@ -155,7 +156,7 @@ async function importRows(db, records, creator, defaultCategory) {
         approx_time_min: textOf(row, 'approx_time_min'),
         final_time_user: textOf(row, 'final_time_user'),
         remarks: textOf(row, 'remarks') || textOf(row, 'notes'),
-        assigned_user: assigneeName || (assignee ? (assignee.full_name || assignee.username) : ''),
+        assigned_user: overrideAssignee ? displayName(overrideAssignee) : (assigneeName || (assignee ? (assignee.full_name || assignee.username) : '')),
         sup_qa: textOf(row, 'sup_qa'),
         time_by_manish: textOf(row, 'time_by_manish'),
       };
@@ -197,7 +198,19 @@ export function importRoutes({ db, logger }) {
     }
 
     const defaultCategory = req.body?.category || req.query?.category || null;
-    await importRows(db, records, req.user, defaultCategory);
+    const rawAssigneeId = req.body?.assignee_id ?? req.query?.assignee_id;
+    let overrideAssignee = null;
+    if (isTruthy(rawAssigneeId)) {
+      const parsedId = pyInt(rawAssigneeId);
+      overrideAssignee = parsedId === null ? null : await getUserById(db, parsedId);
+      if (!overrideAssignee) {
+        return res.status(400).json({ detail: 'Selected assigned user does not exist.' });
+      }
+      if (defaultCategory && !canAccessTaskCategory(overrideAssignee, defaultCategory)) {
+        return res.status(400).json({ detail: 'Selected user does not have access to this department.' });
+      }
+    }
+    await importRows(db, records, req.user, defaultCategory, overrideAssignee);
     return res.json({
       success: true,
       message: `Successfully imported/updated ${records.length} tasks from spreadsheet.`,

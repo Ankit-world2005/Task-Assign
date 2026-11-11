@@ -3516,17 +3516,45 @@ h1 {
   gap: 16px;
 }
 
-.login-page .nav-right {
+.brand-submark {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  user-select: none;
 }
 
-.login-page .nav-link {
-  font-size: 14px;
+.brand-submark-title {
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  line-height: 1.05;
+  color: var(--brand-ink);
+  white-space: nowrap;
+}
+
+.brand-submark-tagline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
   color: var(--ink);
-  padding: 8px 12px;
-  border-radius: var(--r-md);
+  white-space: nowrap;
+}
+
+.brand-submark-tagline::before,
+.brand-submark-tagline::after {
+  content: "";
+  flex: 1;
+  min-width: 14px;
+  height: 1.75px;
+  border-radius: 999px;
+  background: var(--orange-text);
 }
 
 .login-page .main {

@@ -276,12 +276,14 @@ describe('tasks', () => {
       category: 'era_eft',
       project_name: 'Proj',
       insurance_name: 'Payer',
+      address: '123 Main St, Suite 200',
       assignee: ids.alice,
       creation_date: null,
     });
     assert.equal(created.status, 201);
     assert.match(created.data.task_id, new RegExp(`^TSK-${new Date().getUTCFullYear()}-\\d{3,}$`));
     assert.equal(created.data.task_name, 'Proj');
+    assert.equal(created.data.address, '123 Main St, Suite 200');
     assert.equal(created.data.status, 'Request');
     assert.equal(created.data.logs.length, 1);
     assert.equal(created.data.logs[0].remarks, 'Task initially created and assigned to Alice Tester');
@@ -389,6 +391,25 @@ describe('import and export', () => {
     assert.equal(meta.remarks, 'Check denial note');
     assert.equal(meta.sup_qa, 'Approved');
     assert.equal(meta.time_by_manish, '10 min');
+
+    // Explicit assignee_id override on import assigns directly to that Payment Posting user
+    await addUser('pp_import_target', { department: 'Payment Posting' });
+    await addUser('pp_import_denied', { department: 'Credentialing' });
+    const overrideForm = new FormData();
+    overrideForm.append('file', new Blob(['Date,Project Name,Task type,File Name\n2026-11-11,WESTAZ,ERA,Batch_10.pdf\n'], { type: 'text/csv' }), 'pp2.csv');
+    overrideForm.append('category', 'payment_posting');
+    overrideForm.append('assignee_id', String(ids.pp_import_target));
+    const overrideRes = await api('POST', '/api/import-excel/', overrideForm);
+    assert.equal(overrideRes.status, 200);
+    const westazRows = (await api('GET', '/api/tasks/?category=payment_posting&search=WESTAZ')).data;
+    assert.equal(westazRows.length, 1);
+    assert.equal(westazRows[0].assignee, ids.pp_import_target);
+
+    const deniedForm = new FormData();
+    deniedForm.append('file', new Blob(['Date,Project Name,Task type,File Name\n2026-11-11,X,ERA,B.pdf\n'], { type: 'text/csv' }), 'pp3.csv');
+    deniedForm.append('category', 'payment_posting');
+    deniedForm.append('assignee_id', String(ids.pp_import_denied));
+    assert.equal((await api('POST', '/api/import-excel/', deniedForm)).status, 400);
   });
 });
 

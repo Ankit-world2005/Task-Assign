@@ -34,7 +34,7 @@ export const MOC_CHOICES = Object.freeze(['call', 'email', 'fax']);
 export const PORTAL_CREDENTIAL_CATEGORIES = Object.freeze(['portal_creation', 'password_reset']);
 
 const TASK_COLUMNS = [
-  'task_id', 'category', 'project_name', 'task_name', 'sub_plan', 'insurance_name', 'creation_date',
+  'task_id', 'category', 'project_name', 'task_name', 'sub_plan', 'address', 'insurance_name', 'creation_date',
   'follow_up_type', 'follow_up_value', 'status', 'notes', 'created_at', 'updated_at', 'assignee_id',
   'created_by_id', 'provider_name', 'early_start_date', 'group_ptan', 'individual_ptan',
   'provider_effective_date', 'attachment', 'follow_up_days', 'follow_up_due_date', 'portal_link',
@@ -60,6 +60,7 @@ function taskDefaults() {
     individual_ptan: '',
     early_start_date: null,
     sub_plan: '',
+    address: '',
     insurance_name: '',
     creation_date: todayUtc(),
     assignee_id: null,
@@ -159,7 +160,7 @@ function taskFilters(q, query, user = null) {
   const search = lastParam(query, 'search');
   if (search) {
     const value = likeContains(search);
-    const columns = ['t.task_id', 't.project_name', 't.task_name', 't.insurance_name', 't.sub_plan'];
+    const columns = ['t.task_id', 't.project_name', 't.task_name', 't.insurance_name', 't.sub_plan', 't.address'];
     where.push(`(${columns.map((c) => q.icontains(c)).join(' OR ')})`);
     params.push(...columns.map(() => value));
   }

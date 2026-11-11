@@ -22,6 +22,7 @@ const FIELDS = [
   ['individual_ptan', optionalText],
   ['early_start_date', optionalDate],
   ['sub_plan', optionalText],
+  ['address', { type: 'char', required: false, allowBlank: true, allowNull: true, maxLength: 500, default: '' }],
   ['insurance_name', { type: 'char', required: true, maxLength: 255 }],
   ['creation_date', optionalDate],
   ['assignee', optionalUser],
@@ -48,7 +49,7 @@ function preprocess(input) {
     if (isEmptyDate(data[field])) data[field] = null;
   }
   if (isEmptyDate(data.creation_date)) delete data.creation_date;
-  for (const field of ['provider_name', 'group_ptan', 'individual_ptan', 'sub_plan', 'follow_up_value', 'notes', 'attachment', 'task_id', 'task_name']) {
+  for (const field of ['provider_name', 'group_ptan', 'individual_ptan', 'sub_plan', 'address', 'follow_up_value', 'notes', 'attachment', 'task_id', 'task_name']) {
     if (field in data && data[field] === null) data[field] = '';
   }
   if (!isTruthy(data.task_name)) data.task_name = 'project_name' in data ? data.project_name : 'Task';

@@ -106,10 +106,11 @@ export const api = {
   },
 
   // Import Operations (Excel / Spreadsheet)
-  importExcel: async (file, category) => {
+  importExcel: async (file, category, assigneeId) => {
     const formData = new FormData();
     formData.append('file', file);
     if (category) formData.append('category', category);
+    if (assigneeId) formData.append('assignee_id', assigneeId);
     const res = await apiClient.post('/import-excel/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
