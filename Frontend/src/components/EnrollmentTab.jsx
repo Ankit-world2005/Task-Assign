@@ -3,7 +3,6 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import TaskLogsModal from './TaskLogsModal';
 import { ImagePasteRemarks } from './ImagePasteRemarks';
-import { printEnrollmentsReport } from '../utils/printHelper';
 import { formatDate, formatDateTime } from '../utils/dateFormat';
 import DateInput from './DateInput';
 import StatusBadge from './StatusBadge';
@@ -276,10 +275,6 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
     URL.revokeObjectURL(url);
   };
 
-  const handlePrintTable = () => {
-    printEnrollmentsReport(tasks, category, statusFilter, currentUser);
-  };
-
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -457,14 +452,6 @@ export const EnrollmentTab = ({ setCurrentTab, activeCategory = 'all', setActive
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            className="btn-secondary"
-            onClick={handlePrintTable}
-            style={{ padding: '8px 13px', fontSize: '0.84rem' }}
-            title="Print printable summary of currently displayed tasks"
-          >
-            🖨️ Print
-          </button>
           <button
             className="btn-secondary"
             onClick={handleExportExcel}

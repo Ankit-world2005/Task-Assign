@@ -3,9 +3,20 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import TaskLogsModal from './TaskLogsModal';
 import { RemarksDisplay } from './ImagePasteRemarks';
-import { printStaffQueueReport } from '../utils/printHelper';
 import { formatDate } from '../utils/dateFormat';
+import { canAccessCategory, getAllowedTaskCategories } from '../utils/departments';
 import StatusBadge from './StatusBadge';
+
+const CATEGORY_OPTIONS = [
+  { value: 'credentialing', label: 'Credentialing' },
+  { value: 'portal_creation', label: 'Portal Creation' },
+  { value: 'era_eft', label: 'ERA / EFT' },
+  { value: 'password_reset', label: 'Password Reset' },
+  { value: 'portal_unblock', label: 'Portal Unblock' },
+  { value: 'payment_posting', label: 'Payment Posting' },
+  { value: 'general', label: 'General' },
+];
+const CATEGORY_LABEL_MAP = Object.fromEntries(CATEGORY_OPTIONS.map((o) => [o.value, o.label]));
 
 // Approving these task types needs portal details, which are entered on the Update page
 const PORTAL_CREDENTIAL_CATEGORIES = ['portal_creation', 'password_reset'];
@@ -74,7 +85,8 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
   // Filter tasks based on search, status, and category
   const matchesTask = (task) => {
     if (statusFilter !== 'all' && task.status !== statusFilter) return false;
-    if (categoryFilter !== 'all' && task.category !== categoryFilter) return false;
+    const activeCategory = categoryFilter === 'all' || canAccessCategory(currentUser, categoryFilter) ? categoryFilter : 'all';
+    if (activeCategory !== 'all' && task.category !== activeCategory) return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -118,11 +130,18 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
 
   const isUnassignedView = isAdminUser && selectedStaffUser?.id === 'unassigned';
 
-  const currentStaffTasks = activeStaff
+  const rawStaffTasks = activeStaff
     ? isUnassignedView
       ? unassignedTasks
       : tasks.filter((t) => t.assignee === activeStaff.id)
     : [];
+  const allowedCategories = isAdminUser ? null : (getAllowedTaskCategories(currentUser) || []);
+  const currentStaffTasks = isAdminUser
+    ? rawStaffTasks
+    : rawStaffTasks.filter((t) => canAccessCategory(currentUser, t.category));
+  const visibleCategoryOptions = isAdminUser
+    ? CATEGORY_OPTIONS
+    : CATEGORY_OPTIONS.filter((opt) => opt.value !== 'general' && canAccessCategory(currentUser, opt.value));
 
   const filteredStaffTasks = currentStaffTasks.filter(matchesTask);
 
@@ -308,15 +327,15 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
               <select
                 className="form-select"
                 style={{ width: '170px', padding: '7px 10px', fontSize: '0.84rem' }}
-                value={categoryFilter}
+                value={visibleCategoryOptions.some((o) => o.value === categoryFilter) ? categoryFilter : 'all'}
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="all">All Categories</option>
-                <option value="era_eft">ERA / EFT</option>
-                <option value="credentialing">Credentialing</option>
-                <option value="portal_creation">Portal Creation</option>
-                <option value="payment_posting">Payment Posting</option>
-                <option value="general">General</option>
+                {visibleCategoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -337,15 +356,6 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
               <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                 Showing <strong>{filteredStaffTasks.length}</strong> of {currentStaffTasks.length} tasks
               </span>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => printStaffQueueReport(activeStaff, filteredStaffTasks, statusFilter, categoryFilter, currentUser)}
-                style={{ padding: '7px 12px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                title="Print current employee work queue report"
-              >
-                🖨️ Print Queue
-              </button>
               <button
                 type="button"
                 className="btn-secondary"
@@ -377,9 +387,11 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                 No Tasks Found
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-dim)', maxWidth: '440px', margin: '0 auto 1.25rem auto' }}>
-                {currentStaffTasks.length === 0
-                  ? `There are currently no tasks assigned to ${activeStaff.full_name || activeStaff.username}.`
-                  : 'No tasks match your active search and filter criteria.'}
+                {!isAdminUser && allowedCategories.length === 0
+                  ? 'No department tasks are assigned to your account yet. Please contact your administrator.'
+                  : currentStaffTasks.length === 0
+                    ? `There are currently no accessible tasks assigned to ${activeStaff.full_name || activeStaff.username}.`
+                    : 'No tasks match your active search and filter criteria.'}
               </p>
               {isAdminUser && setCurrentTab && (
                 <button
@@ -403,11 +415,7 @@ export const ActionTab = ({ setCurrentTab, selectedStaffUser, setSelectedStaffUs
                         {task.task_id}
                       </span>
                       <span className={`category-tag ${task.category || 'general'}`}>
-                        {task.category === 'era_eft' && 'ERA / EFT'}
-                        {task.category === 'credentialing' && 'Credentialing'}
-                        {task.category === 'portal_creation' && 'Portal Creation'}
-                        {task.category === 'payment_posting' && 'Payment Posting'}
-                        {!['era_eft', 'credentialing', 'portal_creation', 'payment_posting'].includes(task.category) && (task.category || 'General')}
+                        {CATEGORY_LABEL_MAP[task.category] || task.category || 'General'}
                       </span>
                       <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
                         {task.task_name || task.project_name}

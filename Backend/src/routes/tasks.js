@@ -2,7 +2,7 @@
 import express from 'express';
 import { HttpError, requestData, route } from '../http.js';
 import { isTruthy, pyInt, pyStr, sliceChars } from '../lib/py.js';
-import { addDays, parseIsoDate } from '../lib/time.js';
+import { addDays, nowDb, parseIsoDate } from '../lib/time.js';
 import {
   MOC_CHOICES,
   PORTAL_CREDENTIAL_CATEGORIES,
@@ -17,8 +17,8 @@ import {
   resolveTaskId,
   updateTask,
 } from '../models/tasks.js';
-import { fullName, getUserById, isAdmin } from '../models/users.js';
-import { serializeLog, serializeTask, serializeTasks, userNames } from '../serializers.js';
+import { canAccessTaskCategory, displayName, fullName, getUserById, isAdmin } from '../models/users.js';
+import { serializeCheckSheetEntry, serializeLog, serializeTask, serializeTasks, userNames } from '../serializers.js';
 import { validateTaskInput } from '../validation/taskInput.js';
 
 export function taskRoutes({ db, logger }) {
@@ -27,9 +27,18 @@ export function taskRoutes({ db, logger }) {
   const taskOr404 = async (req) => {
     const task = await findTask(db, req.params.pk, req.query, req.user);
     if (task) return task;
+    const pk = pyInt(req.params.pk);
+    if (pk !== null && req.user && !isAdmin(req.user)) {
+      const rawTask = await getTaskRow(db, pk);
+      const isOwnTask =
+        rawTask && (rawTask.assignee_id === req.user.id || (rawTask.assignee_id === null && rawTask.created_by_id === req.user.id));
+      if (isOwnTask && !canAccessTaskCategory(req.user, rawTask.category)) {
+        throw new HttpError(403, { detail: 'You only have access to tasks from your assigned departments.' });
+      }
+    }
     // A non-numeric id gets a bare "Not found.", as before.
     throw new HttpError(404, {
-      detail: pyInt(req.params.pk) === null ? 'Not found.' : 'No Task matches the given query.',
+      detail: pk === null ? 'Not found.' : 'No Task matches the given query.',
     });
   };
 
@@ -199,6 +208,128 @@ export function taskRoutes({ db, logger }) {
         task: await serializeTask(db, await getTaskRow(db, task.id)),
         log: serializeLog(await getLogRow(db, logId), await userNames(db)),
       });
+    },
+  });
+
+  // Payment Posting Check-Sheet: 17-column completed-task ledger shared across Payment Posting users.
+  const requirePaymentPostingAccess = (user) => {
+    if (!canAccessTaskCategory(user, 'payment_posting')) {
+      throw new HttpError(403, { detail: 'You do not have access to Payment Posting Check-Sheet.' });
+    }
+  };
+
+  const CHECK_SHEET_TEXT_SPECS = [
+    ['clinic', 255],
+    ['payer', 255],
+    ['eob_source', 255],
+    ['method', 100],
+    ['era_eob', 100],
+    ['check_no', 100],
+    ['check_amount', 50],
+    ['posted_amount', 50],
+    ['remaining_amount', 50],
+    ['recoupment', 100],
+    ['status', 100],
+    ['posted_by', 150],
+    ['remarks', 2000],
+    ['error_note', 255],
+  ];
+
+  const CHECK_SHEET_DATE_FIELDS = ['check_date', 'posted_date', 'clearance_date'];
+
+  const parseCheckSheetInput = (data, existing = null, user = null) => {
+    const out = {};
+    for (const [key, maxLen] of CHECK_SHEET_TEXT_SPECS) {
+      if (key in data) {
+        const raw = data[key] === null || data[key] === undefined ? '' : pyStr(data[key]).trim();
+        out[key] = sliceChars(raw, maxLen);
+      } else if (!existing) {
+        out[key] = key === 'posted_by' ? (displayName(user) || '') : '';
+      } else {
+        out[key] = existing[key] ?? '';
+      }
+    }
+    if (!out.clinic) return { error: 'Clinic is required.' };
+
+    for (const key of CHECK_SHEET_DATE_FIELDS) {
+      if (key in data) {
+        if (!isTruthy(data[key])) {
+          out[key] = null;
+        } else {
+          const parsed = parseIsoDate(pyStr(data[key]));
+          if (!parsed) return { error: `${key.replace('_', ' ')} must be a valid YYYY-MM-DD date.` };
+          out[key] = parsed;
+        }
+      } else if (!existing) {
+        out[key] = null;
+      } else {
+        out[key] = existing[key] ?? null;
+      }
+    }
+    return { values: out };
+  };
+
+  route(router, '/payment-posting/check-sheet', {
+    get: async (req, res) => {
+      requirePaymentPostingAccess(req.user);
+      const rows = await db.all('SELECT * FROM tasks_paymentchecksheet ORDER BY id DESC');
+      const names = await userNames(db);
+      return res.json(rows.map((row) => serializeCheckSheetEntry(row, names)));
+    },
+    post: async (req, res) => {
+      requirePaymentPostingAccess(req.user);
+      const parsed = parseCheckSheetInput(requestData(req), null, req.user);
+      if (parsed.error) return res.status(400).json({ detail: parsed.error });
+      const v = parsed.values;
+      const now = nowDb();
+      const inserted = await db.get(
+        `INSERT INTO tasks_paymentchecksheet
+           (clinic, payer, eob_source, method, era_eob, check_no, check_date, check_amount, posted_amount,
+            remaining_amount, recoupment, status, posted_date, posted_by, remarks, clearance_date, error_note,
+            created_at, updated_at, created_by_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+        v.clinic, v.payer, v.eob_source, v.method, v.era_eob, v.check_no, v.check_date,
+        v.check_amount, v.posted_amount, v.remaining_amount, v.recoupment, v.status,
+        v.posted_date, v.posted_by, v.remarks, v.clearance_date, v.error_note,
+        now, now, req.user.id,
+      );
+      const row = await db.get('SELECT * FROM tasks_paymentchecksheet WHERE id = ?', Number(inserted.id));
+      return res.status(201).json(serializeCheckSheetEntry(row, await userNames(db)));
+    },
+  });
+
+  route(router, '/payment-posting/check-sheet/:pk', {
+    patch: async (req, res) => {
+      requirePaymentPostingAccess(req.user);
+      const id = pyInt(req.params.pk);
+      const existing = id === null ? null : await db.get('SELECT * FROM tasks_paymentchecksheet WHERE id = ?', id);
+      if (!existing) throw new HttpError(404, { detail: 'Check-Sheet entry not found.' });
+      const parsed = parseCheckSheetInput(requestData(req), existing, req.user);
+      if (parsed.error) return res.status(400).json({ detail: parsed.error });
+      const v = parsed.values;
+      await db.run(
+        `UPDATE tasks_paymentchecksheet
+            SET clinic = ?, payer = ?, eob_source = ?, method = ?, era_eob = ?, check_no = ?, check_date = ?,
+                check_amount = ?, posted_amount = ?, remaining_amount = ?, recoupment = ?, status = ?,
+                posted_date = ?, posted_by = ?, remarks = ?, clearance_date = ?, error_note = ?, updated_at = ?
+          WHERE id = ?`,
+        v.clinic, v.payer, v.eob_source, v.method, v.era_eob, v.check_no, v.check_date,
+        v.check_amount, v.posted_amount, v.remaining_amount, v.recoupment, v.status,
+        v.posted_date, v.posted_by, v.remarks, v.clearance_date, v.error_note, nowDb(), existing.id,
+      );
+      const updated = await db.get('SELECT * FROM tasks_paymentchecksheet WHERE id = ?', existing.id);
+      return res.json(serializeCheckSheetEntry(updated, await userNames(db)));
+    },
+    delete: async (req, res) => {
+      requirePaymentPostingAccess(req.user);
+      const id = pyInt(req.params.pk);
+      const row = id === null ? null : await db.get('SELECT * FROM tasks_paymentchecksheet WHERE id = ?', id);
+      if (!row) throw new HttpError(404, { detail: 'Check-Sheet entry not found.' });
+      if (!isAdmin(req.user) && row.created_by_id !== req.user.id) {
+        throw new HttpError(403, { detail: 'Only administrators or the entry creator can remove check-sheet rows.' });
+      }
+      await db.run('DELETE FROM tasks_paymentchecksheet WHERE id = ?', row.id);
+      return res.status(204).end();
     },
   });
 

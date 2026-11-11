@@ -3,7 +3,6 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { ImagePasteRemarks, RemarksDisplay } from './ImagePasteRemarks';
 import { splitRemarks } from '../utils/remarks';
-import { printTaskAuditReport } from '../utils/printHelper';
 import { addDays, isFollowUpOverdue, localDateString } from '../utils/followUp';
 import { formatDate, formatDateTime, formatTime } from '../utils/dateFormat';
 import DateInput from './DateInput';
@@ -483,13 +482,6 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
     URL.revokeObjectURL(url);
   };
 
-  // =========================================================================
-  // PRINT PROFESSIONAL REPORT / SAVE AS PDF (Bulletproof Iframe-based Print)
-  // =========================================================================
-  const handlePrint = () => {
-    printTaskAuditReport(currentTask, logsList, currentUser);
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-3box-container" onClick={(e) => e.stopPropagation()}>
@@ -510,16 +502,8 @@ export const TaskLogsModal = ({ task, onClose, onTaskUpdated, openOnUpdate = fal
             <StatusBadge status={currentTask.status} />
           </div>
 
-          {/* Print & Excel Export Action Buttons */}
+          {/* Excel Export Action Button */}
           <div className="modal-topbar-export-actions">
-            <button
-              type="button"
-              className="modal-action-pill print-pill"
-              onClick={handlePrint}
-              title="Print official task audit report or save as PDF"
-            >
-              🖨️ Print
-            </button>
             <button
               type="button"
               className="modal-action-pill excel-pill"

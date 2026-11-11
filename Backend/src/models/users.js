@@ -14,9 +14,42 @@ export const PROFILE_DEFAULTS = Object.freeze({
   role: 'employee',
   employee_id: '',
   phone: '',
-  department: 'Operations & Enrollment',
+  department: 'Credentialing',
   avatar_color: '#2563eb',
 });
+
+export const DEPARTMENT_CATEGORY_MAP = Object.freeze({
+  Credentialing: ['credentialing'],
+  'Portal Creation': ['portal_creation'],
+  'ERA / EFT': ['era_eft'],
+  'Password Reset': ['password_reset'],
+  'Portal Unblock': ['portal_unblock'],
+  Enrollment: ['credentialing', 'portal_creation', 'era_eft'],
+  'Payment Posting': ['payment_posting'],
+});
+
+export function parseUserDepartments(departmentValue) {
+  return String(departmentValue || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => Object.hasOwn(DEPARTMENT_CATEGORY_MAP, item));
+}
+
+/** Category keys a user may access (`null` = unrestricted admin). */
+export function getAllowedTaskCategories(user) {
+  if (isAdmin(user)) return null;
+  const allowed = new Set();
+  for (const dept of parseUserDepartments(user?.profile?.department)) {
+    for (const category of DEPARTMENT_CATEGORY_MAP[dept]) allowed.add(category);
+  }
+  return Array.from(allowed);
+}
+
+export function canAccessTaskCategory(user, category) {
+  const allowed = getAllowedTaskCategories(user);
+  if (allowed === null) return true;
+  return allowed.includes(String(category || '').trim().toLowerCase());
+}
 
 /** User ids are 32-bit integers; anything outside that range matches no user. */
 export const isUserId = (id) => Number.isSafeInteger(id) && id >= -2147483648 && id <= 2147483647;

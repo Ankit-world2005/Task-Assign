@@ -252,7 +252,7 @@ export function authRoutes({ db, mailer, logger, security }) {
         profile.role = role;
         profile.employee_id = strField(data, 'employee_id') || (role === 'admin' ? `US24-ADM${suffix}` : `US24-EMP${suffix}`);
         profile.phone = strField(data, 'phone');
-        profile.department = strField(data, 'department', 'Operations & Enrollment');
+        profile.department = strField(data, 'department', 'Credentialing');
         profile.avatar_color = strField(data, 'avatar_color', '#2563eb');
         await saveProfile(tx, profile);
         return id;

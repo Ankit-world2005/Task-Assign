@@ -50,14 +50,39 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskForLogs, setSelectedTaskForLogs] = useState(null);
 
-  // Sub-tabs: 'assign' (Task Assign form view, admin only) or 'action' (Action Tab queue view)
+  // Sub-tabs: 'assign' (Admin), 'action' (Task Queue), or 'check-sheet' (Completed task log)
   const [activeSubTab, setActiveSubTab] = useState(isAdminUser ? 'assign' : 'action');
+  const currentSubTab = !isAdminUser && activeSubTab === 'assign' ? 'action' : activeSubTab;
 
-  useEffect(() => {
-    if (!isAdminUser && activeSubTab !== 'action') {
-      setActiveSubTab('action');
-    }
-  }, [isAdminUser, activeSubTab]);
+  const initialCheckSheetForm = () => ({
+    clinic: '',
+    payer: '',
+    eob_source: '',
+    method: '',
+    era_eob: '',
+    check_no: '',
+    check_date: '',
+    check_amount: '',
+    posted_amount: '',
+    remaining_amount: '',
+    recoupment: '',
+    status: 'Posted',
+    posted_date: new Date().toISOString().split('T')[0],
+    posted_by: currentUser?.full_name || currentUser?.username || '',
+    remarks: '',
+    clearance_date: '',
+    error_note: '',
+  });
+
+  // Check-Sheet state (17-column completed checksheet shared across all Payment Posting users)
+  const [checkSheetEntries, setCheckSheetEntries] = useState([]);
+  const [checkSheetLoading, setCheckSheetLoading] = useState(false);
+  const [checkSheetSubmitting, setCheckSheetSubmitting] = useState(false);
+  const [editingCheckSheetId, setEditingCheckSheetId] = useState(null);
+  const [remainingTouched, setRemainingTouched] = useState(false);
+  const [checkSheetSearch, setCheckSheetSearch] = useState('');
+  const [checkSheetForm, setCheckSheetForm] = useState(initialCheckSheetForm);
+  const checkSheetFormRef = useRef(null);
 
   // Import Tasks State
   const [showImportModal, setShowImportModal] = useState(false);
@@ -115,8 +140,135 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
     }
   };
 
+  const fetchCheckSheet = async () => {
+    try {
+      setCheckSheetLoading(true);
+      const data = await api.getPaymentCheckSheet();
+      setCheckSheetEntries(data || []);
+    } catch (err) {
+      console.error('Failed to load check-sheet entries:', err);
+      showFeedback('error', 'Failed to load Check-Sheet entries.');
+    } finally {
+      setCheckSheetLoading(false);
+    }
+  };
+
+  const parseCurrency = (val) => {
+    const cleaned = String(val || '').replace(/[$,\s]/g, '');
+    return cleaned !== '' && Number.isFinite(Number(cleaned)) ? Number(cleaned) : NaN;
+  };
+
+  const handleCheckSheetChange = (field, value) => {
+    if (field === 'remaining_amount') {
+      setRemainingTouched(true);
+    }
+    setCheckSheetForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (!remainingTouched && (field === 'check_amount' || field === 'posted_amount' || field === 'recoupment')) {
+        const chk = parseCurrency(next.check_amount);
+        if (Number.isFinite(chk)) {
+          const posted = parseCurrency(next.posted_amount);
+          const recoup = parseCurrency(next.recoupment);
+          next.remaining_amount = (chk - (Number.isFinite(posted) ? posted : 0) - (Number.isFinite(recoup) ? recoup : 0)).toFixed(2);
+        } else {
+          next.remaining_amount = '';
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleEditCheckSheetEntry = (entry) => {
+    setEditingCheckSheetId(entry.id);
+    setRemainingTouched(true);
+    setCheckSheetForm({
+      clinic: entry.clinic || '',
+      payer: entry.payer || '',
+      eob_source: entry.eob_source || '',
+      method: entry.method || '',
+      era_eob: entry.era_eob || '',
+      check_no: entry.check_no || '',
+      check_date: entry.check_date || '',
+      check_amount: entry.check_amount || '',
+      posted_amount: entry.posted_amount || '',
+      remaining_amount: entry.remaining_amount || '',
+      recoupment: entry.recoupment || '',
+      status: entry.status || 'Posted',
+      posted_date: entry.posted_date || '',
+      posted_by: entry.posted_by || entry.created_by_name || '',
+      remarks: entry.remarks || '',
+      clearance_date: entry.clearance_date || '',
+      error_note: entry.error_note || '',
+    });
+    checkSheetFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const cancelCheckSheetEdit = () => {
+    setEditingCheckSheetId(null);
+    setRemainingTouched(false);
+    setCheckSheetForm(initialCheckSheetForm());
+  };
+
+  const handleCheckSheetSubmit = async (e) => {
+    e.preventDefault();
+    if (!checkSheetForm.clinic.trim()) {
+      showFeedback('error', 'Clinic is required for Check-Sheet entry.');
+      return;
+    }
+    setCheckSheetSubmitting(true);
+    try {
+      const payload = { ...checkSheetForm, clinic: checkSheetForm.clinic.trim() };
+      if (editingCheckSheetId) {
+        const updated = await api.updatePaymentCheckSheetEntry(editingCheckSheetId, payload);
+        setCheckSheetEntries((prev) => prev.map((item) => (item.id === editingCheckSheetId ? updated : item)));
+        showFeedback('success', 'Check-Sheet entry updated.');
+        setEditingCheckSheetId(null);
+      } else {
+        const created = await api.createPaymentCheckSheetEntry(payload);
+        setCheckSheetEntries((prev) => [created, ...prev]);
+        showFeedback('success', 'Check-Sheet entry saved.');
+      }
+      setRemainingTouched(false);
+      setCheckSheetForm(initialCheckSheetForm());
+    } catch (err) {
+      showFeedback('error', err.response?.data?.detail || 'Failed to save Check-Sheet entry.');
+    } finally {
+      setCheckSheetSubmitting(false);
+    }
+  };
+
+  const handleDeleteCheckSheetEntry = async (entry) => {
+    try {
+      await api.deletePaymentCheckSheetEntry(entry.id);
+      if (editingCheckSheetId === entry.id) cancelCheckSheetEdit();
+      setCheckSheetEntries((prev) => prev.filter((item) => item.id !== entry.id));
+      showFeedback('success', 'Check-Sheet entry removed.');
+    } catch (err) {
+      showFeedback('error', err.response?.data?.detail || 'Failed to delete Check-Sheet entry.');
+    }
+  };
+
+  const filteredCheckSheetEntries = useMemo(() => {
+    if (!checkSheetSearch.trim()) return checkSheetEntries;
+    const q = checkSheetSearch.toLowerCase();
+    return checkSheetEntries.filter(
+      (entry) =>
+        entry.clinic?.toLowerCase().includes(q) ||
+        entry.payer?.toLowerCase().includes(q) ||
+        entry.eob_source?.toLowerCase().includes(q) ||
+        entry.method?.toLowerCase().includes(q) ||
+        entry.era_eob?.toLowerCase().includes(q) ||
+        entry.check_no?.toLowerCase().includes(q) ||
+        entry.status?.toLowerCase().includes(q) ||
+        entry.posted_by?.toLowerCase().includes(q) ||
+        entry.remarks?.toLowerCase().includes(q) ||
+        entry.error_note?.toLowerCase().includes(q)
+    );
+  }, [checkSheetEntries, checkSheetSearch]);
+
   useEffect(() => {
     fetchTasks();
+    fetchCheckSheet();
   }, []);
 
   // Set default assignee to first employee (Admin Only)
@@ -395,42 +547,96 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </h1>
             </div>
             <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
-              {(activeSubTab === 'action' || isStaff)
-                ? 'Review payment posting queues, update task statuses, and record final times.'
-                : 'Assign payment posting, denials, ERA remittance, and PPT queues.'}
+              {currentSubTab === 'check-sheet'
+                ? 'Log completed payment posting task details and view all team check-sheet records.'
+                : (currentSubTab === 'action' || isStaff)
+                  ? 'Review payment posting queues, update task statuses, and record final times.'
+                  : 'Assign payment posting, denials, ERA remittance, and PPT queues.'}
             </p>
           </div>
         </div>
 
-        {/* Header Right: Import Task & Task Toggle Buttons (Admin Only) */}
-        {isAdminUser && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => setShowImportModal(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                border: '1px solid var(--border-glass)',
-                background: 'rgba(11, 13, 16, 0.05)',
-                color: 'var(--text-main)',
-                transition: 'all 0.15s ease',
-              }}
-              title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
-            >
-              <span>📤</span>
-              <span>Import Task</span>
-            </button>
+        {/* Header Right: Check-Sheet, Import Task & Task Sub-Tab Toggle Buttons */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            id="pp-subtab-check-sheet"
+            type="button"
+            aria-pressed={currentSubTab === 'check-sheet'}
+            onClick={() => setActiveSubTab('check-sheet')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              borderRadius: '999px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: currentSubTab === 'check-sheet' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+              background: currentSubTab === 'check-sheet' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+              color: currentSubTab === 'check-sheet' ? '#ffffff' : 'var(--text-main)',
+              transition: 'all 0.15s ease',
+            }}
+            title="Enter completed payment posting task details in Check-Sheet"
+          >
+            <span>✅</span>
+            <span>Check-Sheet</span>
+          </button>
 
+          {isAdminUser ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowImportModal(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: '1px solid var(--border-glass)',
+                  background: 'rgba(11, 13, 16, 0.05)',
+                  color: 'var(--text-main)',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
+              >
+                <span>📤</span>
+                <span>Import Task</span>
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={currentSubTab === 'action'}
+                onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                  background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                  color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>⚡</span>
+                <span>Task</span>
+              </button>
+            </>
+          ) : (
             <button
+              id="pp-subtab-queue"
               type="button"
-              onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
+              aria-pressed={currentSubTab === 'action'}
+              onClick={() => setActiveSubTab('action')}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -440,23 +646,23 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                border: activeSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-                background: activeSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-                color: activeSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
                 transition: 'all 0.15s ease',
               }}
             >
-              <span>⚡</span>
-              <span>Task</span>
+              <span>📋</span>
+              <span>Queue</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ============================================================ */}
       {/* SUB-TAB 1: ACTION TAB (QUEUE, ACTION CARDS, WORK LOGS)       */}
       {/* ============================================================ */}
-      {(activeSubTab === 'action' || isStaff) && (
+      {currentSubTab === 'action' && (
         <div>
           {/* KPI Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
@@ -736,7 +942,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       {/* ============================================================ */}
       {/* SUB-TAB 2: TASK ASSIGN (THE 13 COLUMNS ASSIGNMENT FORM, ADMIN ONLY) */}
       {/* ============================================================ */}
-      {isAdminUser && activeSubTab === 'assign' && (
+      {isAdminUser && currentSubTab === 'assign' && (
         <div className="glass-panel" style={{ padding: '2rem 2.5rem', borderRadius: '12px' }}>
           {/* The 13 Columns Form */}
           <form onSubmit={handleSubmit}>
@@ -952,6 +1158,444 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* SUB-TAB 3: CHECK-SHEET (17-COLUMN COMPLETED TASK LEDGER)     */}
+      {/* ============================================================ */}
+      {currentSubTab === 'check-sheet' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Manual Entry / Update Form */}
+          <div ref={checkSheetFormRef} className="glass-panel" style={{ padding: '1.5rem 2rem', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+                  {editingCheckSheetId ? 'Update Check-Sheet Entry' : 'Add Check-Sheet Entry'}
+                </h2>
+                <p style={{ margin: '3px 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                  Enter or update completed payment posting check-sheet details. All Payment Posting users can view and update entries.
+                </p>
+              </div>
+              {editingCheckSheetId && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={cancelCheckSheetEdit}
+                  style={{ padding: '6px 14px', fontSize: '0.8rem' }}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleCheckSheetSubmit}>
+              <datalist id="cs-method-options">
+                <option value="EFT" />
+                <option value="Check" />
+                <option value="ACH" />
+                <option value="Credit Card" />
+                <option value="Virtual Card" />
+                <option value="Wire" />
+              </datalist>
+              <datalist id="cs-era-options">
+                <option value="ERA" />
+                <option value="EOB" />
+                <option value="ERA/EOB" />
+                <option value="No EOB" />
+              </datalist>
+              <datalist id="cs-status-options">
+                <option value="Posted" />
+                <option value="Partially Posted" />
+                <option value="Pending" />
+                <option value="Hold" />
+                <option value="Recouped" />
+                <option value="Completed" />
+              </datalist>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(185px, 1fr))', gap: '0.85rem', marginBottom: '1rem' }}>
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-clinic">Clinic *</label>
+                  <input
+                    id="cs-clinic"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.clinic}
+                    onChange={(e) => handleCheckSheetChange('clinic', e.target.value)}
+                    placeholder="e.g. Hari Kisan, ARRA"
+                    required
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-payer">Payer</label>
+                  <input
+                    id="cs-payer"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.payer}
+                    onChange={(e) => handleCheckSheetChange('payer', e.target.value)}
+                    placeholder="e.g. Aetna, BCBS, Cigna"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-eob-source">EOB Source</label>
+                  <input
+                    id="cs-eob-source"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.eob_source}
+                    onChange={(e) => handleCheckSheetChange('eob_source', e.target.value)}
+                    placeholder="e.g. Availity, Optum, Portal"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-method">Method</label>
+                  <input
+                    id="cs-method"
+                    type="text"
+                    list="cs-method-options"
+                    className="compact-form-input"
+                    value={checkSheetForm.method}
+                    onChange={(e) => handleCheckSheetChange('method', e.target.value)}
+                    placeholder="e.g. EFT, Check, ACH"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-era-eob">ERA/EOB</label>
+                  <input
+                    id="cs-era-eob"
+                    type="text"
+                    list="cs-era-options"
+                    className="compact-form-input"
+                    value={checkSheetForm.era_eob}
+                    onChange={(e) => handleCheckSheetChange('era_eob', e.target.value)}
+                    placeholder="e.g. ERA, EOB"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-check-no">Check no</label>
+                  <input
+                    id="cs-check-no"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.check_no}
+                    onChange={(e) => handleCheckSheetChange('check_no', e.target.value)}
+                    placeholder="Check or Trace #"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-check-date">Check Date</label>
+                  <DateInput
+                    id="cs-check-date"
+                    className="compact-form-input"
+                    value={checkSheetForm.check_date}
+                    onChange={(val) => handleCheckSheetChange('check_date', val)}
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-check-amount">Check Amount</label>
+                  <input
+                    id="cs-check-amount"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.check_amount}
+                    onChange={(e) => handleCheckSheetChange('check_amount', e.target.value)}
+                    placeholder="e.g. 1500.00"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-posted-amount">Posted Amount</label>
+                  <input
+                    id="cs-posted-amount"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.posted_amount}
+                    onChange={(e) => handleCheckSheetChange('posted_amount', e.target.value)}
+                    placeholder="e.g. 1500.00"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-remaining-amount">Remaining Amount</label>
+                  <input
+                    id="cs-remaining-amount"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.remaining_amount}
+                    onChange={(e) => handleCheckSheetChange('remaining_amount', e.target.value)}
+                    placeholder="Auto-calculated or manual"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-recoupment">Recoupment</label>
+                  <input
+                    id="cs-recoupment"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.recoupment}
+                    onChange={(e) => handleCheckSheetChange('recoupment', e.target.value)}
+                    placeholder="e.g. 0.00"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-status">Status</label>
+                  <input
+                    id="cs-status"
+                    type="text"
+                    list="cs-status-options"
+                    className="compact-form-input"
+                    value={checkSheetForm.status}
+                    onChange={(e) => handleCheckSheetChange('status', e.target.value)}
+                    placeholder="e.g. Posted, Partially Posted"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-posted-date">Posted date</label>
+                  <DateInput
+                    id="cs-posted-date"
+                    className="compact-form-input"
+                    value={checkSheetForm.posted_date}
+                    onChange={(val) => handleCheckSheetChange('posted_date', val)}
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-user">User</label>
+                  <input
+                    id="cs-user"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.posted_by}
+                    onChange={(e) => handleCheckSheetChange('posted_by', e.target.value)}
+                    placeholder="User name"
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-clearance-date">Clearance date</label>
+                  <DateInput
+                    id="cs-clearance-date"
+                    className="compact-form-input"
+                    value={checkSheetForm.clearance_date}
+                    onChange={(val) => handleCheckSheetChange('clearance_date', val)}
+                  />
+                </div>
+
+                <div className="compact-form-group">
+                  <label className="compact-form-label" htmlFor="cs-error">ERROR</label>
+                  <input
+                    id="cs-error"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.error_note}
+                    onChange={(e) => handleCheckSheetChange('error_note', e.target.value)}
+                    placeholder="Any error or discrepancy note"
+                  />
+                </div>
+
+                <div className="compact-form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label className="compact-form-label" htmlFor="cs-remarks">Remarks</label>
+                  <input
+                    id="cs-remarks"
+                    type="text"
+                    className="compact-form-input"
+                    value={checkSheetForm.remarks}
+                    onChange={(e) => handleCheckSheetChange('remarks', e.target.value)}
+                    placeholder="Enter remarks, batch details, or follow-up notes..."
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                {editingCheckSheetId && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={cancelCheckSheetEdit}
+                    style={{ padding: '9px 18px', fontSize: '0.88rem' }}
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={checkSheetSubmitting}
+                  style={{ minWidth: '195px', padding: '9px 20px', fontSize: '0.88rem', fontWeight: 600 }}
+                >
+                  {checkSheetSubmitting
+                    ? 'Saving...'
+                    : editingCheckSheetId
+                      ? 'Save Changes'
+                      : '+ Add to Check-Sheet'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Filter Bar & Team Check-Sheet Table */}
+          <div className="glass-panel" style={{ padding: '12px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 260px', maxWidth: '440px' }}>
+              <input
+                type="text"
+                aria-label="Search check-sheet entries"
+                className="filter-input"
+                value={checkSheetSearch}
+                onChange={(e) => setCheckSheetSearch(e.target.value)}
+                placeholder="Search by clinic, payer, check no, method, user, status, error..."
+                style={{ width: '100%', padding: '7px 12px', fontSize: '0.82rem' }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Showing <strong>{filteredCheckSheetEntries.length}</strong> of {checkSheetEntries.length} check-sheet entries
+              </span>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={fetchCheckSheet}
+                style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                title="Refresh Check-Sheet"
+              >
+                ↻
+              </button>
+            </div>
+          </div>
+
+          <div className="glass-panel" style={{ borderRadius: '10px', overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+              <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(11, 13, 16, 0.04)', borderBottom: '1px solid var(--border-glass)', textAlign: 'left' }}>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Clinic</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Payer</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>EOB Source</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Method</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>ERA/EOB</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Check no</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Check Date</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Check Amount</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Posted Amount</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Remaining Amount</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Recoupment</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Status</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Posted date</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>User</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Remarks</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>Clearance date</th>
+                    <th style={{ padding: '12px 12px', whiteSpace: 'nowrap' }}>ERROR</th>
+                    <th style={{ padding: '12px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checkSheetLoading ? (
+                    <tr>
+                      <td colSpan="18" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                        Loading Check-Sheet entries...
+                      </td>
+                    </tr>
+                  ) : filteredCheckSheetEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan="18" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                        No Check-Sheet entries recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCheckSheetEntries.map((entry) => (
+                      <tr key={entry.id} style={{ borderBottom: '1px solid var(--border-glass)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap' }}>
+                          {entry.clinic}
+                        </td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{entry.payer || '—'}</td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{entry.eob_source || '—'}</td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{entry.method || '—'}</td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                          {entry.era_eob ? (
+                            <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(2, 132, 199, 0.1)', color: '#0369a1', fontWeight: 600, fontSize: '0.75rem' }}>
+                              {entry.era_eob}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontFamily: 'var(--mono)', whiteSpace: 'nowrap' }}>{entry.check_no || '—'}</td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                          {formatDate(entry.check_date) || '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, whiteSpace: 'nowrap' }}>{entry.check_amount || '—'}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: entry.posted_amount ? '#16a34a' : 'inherit', whiteSpace: 'nowrap' }}>
+                          {entry.posted_amount || '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: parseCurrency(entry.remaining_amount) > 0 ? '#d97706' : 'inherit', whiteSpace: 'nowrap' }}>
+                          {entry.remaining_amount || '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>{entry.recoupment || '—'}</td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                          {entry.status ? (
+                            <span style={{ padding: '2px 8px', borderRadius: '999px', background: 'rgba(37, 99, 235, 0.1)', color: '#1d4ed8', fontWeight: 600, fontSize: '0.75rem' }}>
+                              {entry.status}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                          {formatDate(entry.posted_date) || '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                          👤 {entry.posted_by || entry.created_by_name || 'Staff'}
+                        </td>
+                        <td style={{ padding: '10px 12px', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.remarks}>
+                          {entry.remarks || '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>
+                          {formatDate(entry.clearance_date) || '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                          {entry.error_note ? (
+                            <span style={{ padding: '2px 7px', borderRadius: '4px', background: 'rgba(220, 38, 38, 0.1)', color: '#dc2626', fontWeight: 600, fontSize: '0.75rem' }}>
+                              {entry.error_note}
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => handleEditCheckSheetEntry(entry)}
+                              style={{ padding: '4px 9px', fontSize: '0.75rem' }}
+                              title="Update entry"
+                            >
+                              Edit
+                            </button>
+                            {(isAdminUser || entry.created_by === currentUser?.id) && (
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => handleDeleteCheckSheetEntry(entry)}
+                                style={{ padding: '4px 9px', fontSize: '0.75rem', color: '#dc2626' }}
+                                title="Remove entry"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

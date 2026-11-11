@@ -113,3 +113,32 @@ export async function serializeTasks(q, tasks) {
 export async function serializeTask(q, task) {
   return (await serializeTasks(q, [task]))[0];
 }
+
+export function serializeCheckSheetEntry(entry, names) {
+  const creator = nameOf(names, entry.created_by_id);
+  const creatorName = creator ? displayName(creator) : 'Staff';
+  return {
+    id: Number(entry.id),
+    clinic: entry.clinic,
+    payer: entry.payer,
+    eob_source: entry.eob_source,
+    method: entry.method,
+    era_eob: entry.era_eob,
+    check_no: entry.check_no,
+    check_date: entry.check_date || null,
+    check_amount: entry.check_amount,
+    posted_amount: entry.posted_amount,
+    remaining_amount: entry.remaining_amount,
+    recoupment: entry.recoupment,
+    status: entry.status,
+    posted_date: entry.posted_date || null,
+    posted_by: entry.posted_by || creatorName,
+    remarks: entry.remarks,
+    clearance_date: entry.clearance_date || null,
+    error_note: entry.error_note,
+    created_by: entry.created_by_id,
+    created_by_name: creatorName,
+    created_at: toApiDatetime(entry.created_at),
+    updated_at: toApiDatetime(entry.updated_at),
+  };
+}

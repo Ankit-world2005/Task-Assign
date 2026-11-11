@@ -3,8 +3,8 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import TaskLogsModal from './TaskLogsModal';
 import { RemarksDisplay } from './ImagePasteRemarks';
-import { printDashboardReport } from '../utils/printHelper';
 import { formatDateTime } from '../utils/dateFormat';
+import { canAccessCategory, canAccessTab } from '../utils/departments';
 import StatusBadge from './StatusBadge';
 
 export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory }) => {
@@ -86,15 +86,6 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => printDashboardReport(kpis, categories, assignees, currentUser)}
-            title="Print executive operations dashboard summary report"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            🖨️ Print Summary
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
             onClick={() => {
               if (onSelectStaff && currentUser) {
                 onSelectStaff(currentUser);
@@ -166,41 +157,11 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
           </div>
 
           {/* Unified Multi-Segment Distribution Bar */}
-          <div className="cat-segmented-bar-wrapper">
-            <div className="cat-segmented-bar">
-              {[
-                { key: 'portal_creation', color: '#0284c7', count: categories.portal_creation || 0, label: 'Portal' },
-                { key: 'credentialing', color: '#0648c0', count: categories.credentialing || 0, label: 'Credentialing' },
-                { key: 'era_eft', color: '#16a34a', count: categories.era_eft || 0, label: 'ERA/EFT' },
-                { key: 'general', color: '#7c3aed', count: categories.general || 0, label: 'General' },
-              ].map((c) => {
-                const pct = kpis.total > 0 ? (c.count / kpis.total) * 100 : 0;
-                if (pct <= 0) return null;
-                return (
-                  <div
-                    key={c.key}
-                    style={{
-                      width: `${pct}%`,
-                      backgroundColor: c.color,
-                      height: '100%',
-                    }}
-                    title={`${c.label}: ${c.count} tasks (${Math.round(pct)}%)`}
-                  />
-                );
-              })}
-            </div>
-            <div className="cat-legend-row">
-              <span className="cat-legend-dot"><span className="dot" style={{ background: '#0284c7' }} />Portal (52%)</span>
-              <span className="cat-legend-dot"><span className="dot" style={{ background: '#0648c0' }} />Credentialing (29%)</span>
-              <span className="cat-legend-dot"><span className="dot" style={{ background: '#16a34a' }} />ERA/EFT (19%)</span>
-            </div>
-          </div>
-
-          {/* Interactive Category Cards */}
-          <div className="cat-items-list">
-            {[
+          {(() => {
+            const visibleCategories = [
               {
                 label: 'Portal Creation & Setup',
+                shortLabel: 'Portal',
                 key: 'portal_creation',
                 icon: '🌐',
                 desc: 'Payer web registrations, Navinet & Availity setups',
@@ -209,6 +170,7 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
               },
               {
                 label: 'Provider Credentialing',
+                shortLabel: 'Credentialing',
                 key: 'credentialing',
                 icon: '🏥',
                 desc: 'CAQH profile management & board enrollments',
@@ -217,6 +179,7 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
               },
               {
                 label: 'ERA / EFT Direct Pay',
+                shortLabel: 'ERA/EFT',
                 key: 'era_eft',
                 icon: '💳',
                 desc: 'Electronic remittance & bank payment linkages',
@@ -224,75 +187,169 @@ export const DashboardTab = ({ setCurrentTab, onSelectStaff, onSelectCategory })
                 bgColor: 'rgba(22, 163, 74, 0.12)',
               },
               {
+                label: 'Password Reset',
+                shortLabel: 'Password Reset',
+                key: 'password_reset',
+                icon: '🔑',
+                desc: 'Portal password recovery & credential updates',
+                color: '#c9192e',
+                bgColor: 'rgba(201, 25, 46, 0.12)',
+              },
+              {
+                label: 'Portal Unblock',
+                shortLabel: 'Portal Unblock',
+                key: 'portal_unblock',
+                icon: '🔓',
+                desc: 'Unlocking payer & clearinghouse accounts',
+                color: '#0d9488',
+                bgColor: 'rgba(13, 148, 136, 0.12)',
+              },
+              {
+                label: 'Payment Posting',
+                shortLabel: 'Payment Posting',
+                key: 'payment_posting',
+                icon: '💰',
+                desc: 'Daily EOB, ERA & patient posting queues',
+                color: '#d97706',
+                bgColor: 'rgba(217, 119, 6, 0.12)',
+              },
+              {
                 label: 'General Practice Tasks',
+                shortLabel: 'General',
                 key: 'general',
                 icon: '📋',
                 desc: 'Provider inquiries & supporting documentation',
                 color: '#7c3aed',
                 bgColor: 'rgba(124, 58, 237, 0.12)',
               },
-            ].map((cat) => {
-              const count = categories[cat.key] || 0;
-              const pct = kpis.total > 0 ? Math.round((count / kpis.total) * 100) : 0;
+            ].filter((c) => canAccessCategory(currentUser, c.key));
+
+            const topCat = visibleCategories.reduce(
+              (best, c) => ((categories[c.key] || 0) > (categories[best?.key] || 0) ? c : best),
+              visibleCategories[0] || null,
+            );
+            const topCount = topCat ? (categories[topCat.key] || 0) : 0;
+            const topPct = kpis.total > 0 && topCount > 0 ? Math.round((topCount / kpis.total) * 100) : 0;
+
+            const handleCategoryClick = (key) => {
+              if (key === 'payment_posting') {
+                setCurrentTab(canAccessTab(currentUser, 'payment-posting') ? 'payment-posting' : 'employee-task');
+                return;
+              }
+              if (['credentialing', 'portal_creation', 'era_eft'].includes(key) && canAccessTab(currentUser, 'enrollment') && onSelectCategory) {
+                onSelectCategory(key);
+                return;
+              }
+              setCurrentTab('employee-task');
+            };
+
+            if (visibleCategories.length === 0) {
               return (
-                <div
-                  key={cat.key}
-                  className="cat-stat-card"
-                  onClick={() => {
-                    if (onSelectCategory) {
-                      onSelectCategory(cat.key);
-                    } else {
-                      setCurrentTab('enrollment');
-                    }
-                  }}
-                  title={`Click to open ${cat.label} in Enrollment Directory`}
-                >
-                  <div className="cat-card-header-flex">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span className="cat-card-icon" style={{ background: cat.bgColor }}>
-                        {cat.icon}
-                      </span>
-                      <div>
-                        <div className="cat-card-name">{cat.label}</div>
-                        <div className="cat-card-desc">{cat.desc}</div>
-                      </div>
-                    </div>
-
-                    <div className="cat-card-counts">
-                      <span className="cat-number-badge" style={{ color: cat.color }}>
-                        {count}
-                      </span>
-                      <span className="cat-pct-label">{pct}%</span>
-                      <span className="cat-arrow-indicator">➔</span>
-                    </div>
-                  </div>
-
-                  <div className="cat-progress-track">
-                    <div
-                      className="cat-progress-fill"
-                      style={{
-                        width: `${pct}%`,
-                        backgroundColor: cat.color,
-                        boxShadow: 'none',
-                      }}
-                    />
-                  </div>
+                <div style={{ padding: '1.5rem 0', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                  No department tasks are assigned to your account. Contact your administrator.
                 </div>
               );
-            })}
-          </div>
+            }
 
-          {/* Quick Insights Banner at bottom to eliminate empty void */}
-          <div className="cat-insights-footer">
-            <div className="cat-insight-chip">
-              <span className="chip-icon">⚡</span>
-              <span><strong>Dominant Volume:</strong> Portal Creation (52%)</span>
-            </div>
-            <div className="cat-insight-chip">
-              <span className="chip-icon">🎯</span>
-              <span><strong>Payer Network:</strong> Aetna, BCBS, Cigna</span>
-            </div>
-          </div>
+            return (
+              <>
+                <div className="cat-segmented-bar-wrapper">
+                  <div className="cat-segmented-bar">
+                    {visibleCategories.map((c) => {
+                      const count = categories[c.key] || 0;
+                      const pct = kpis.total > 0 ? (count / kpis.total) * 100 : 0;
+                      if (pct <= 0) return null;
+                      return (
+                        <div
+                          key={c.key}
+                          style={{
+                            width: `${pct}%`,
+                            backgroundColor: c.color,
+                            height: '100%',
+                          }}
+                          title={`${c.shortLabel}: ${count} tasks (${Math.round(pct)}%)`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="cat-legend-row">
+                    {visibleCategories.slice(0, 4).map((c) => {
+                      const count = categories[c.key] || 0;
+                      const pct = kpis.total > 0 ? Math.round((count / kpis.total) * 100) : 0;
+                      return (
+                        <span key={c.key} className="cat-legend-dot">
+                          <span className="dot" style={{ background: c.color }} />
+                          {c.shortLabel} ({pct}%)
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Interactive Category Cards */}
+                <div className="cat-items-list">
+                  {visibleCategories.map((cat) => {
+                    const count = categories[cat.key] || 0;
+                    const pct = kpis.total > 0 ? Math.round((count / kpis.total) * 100) : 0;
+                    return (
+                      <div
+                        key={cat.key}
+                        className="cat-stat-card"
+                        onClick={() => handleCategoryClick(cat.key)}
+                        title={`Click to open ${cat.label}`}
+                      >
+                        <div className="cat-card-header-flex">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="cat-card-icon" style={{ background: cat.bgColor }}>
+                              {cat.icon}
+                            </span>
+                            <div>
+                              <div className="cat-card-name">{cat.label}</div>
+                              <div className="cat-card-desc">{cat.desc}</div>
+                            </div>
+                          </div>
+
+                          <div className="cat-card-counts">
+                            <span className="cat-number-badge" style={{ color: cat.color }}>
+                              {count}
+                            </span>
+                            <span className="cat-pct-label">{pct}%</span>
+                            <span className="cat-arrow-indicator">➔</span>
+                          </div>
+                        </div>
+
+                        <div className="cat-progress-track">
+                          <div
+                            className="cat-progress-fill"
+                            style={{
+                              width: `${pct}%`,
+                              backgroundColor: cat.color,
+                              boxShadow: 'none',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Quick Insights Banner at bottom to eliminate empty void */}
+                <div className="cat-insights-footer">
+                  <div className="cat-insight-chip">
+                    <span className="chip-icon">⚡</span>
+                    <span>
+                      <strong>Dominant Volume:</strong>{' '}
+                      {topCount > 0 ? `${topCat.shortLabel} (${topPct}%)` : 'No active volume yet'}
+                    </span>
+                  </div>
+                  <div className="cat-insight-chip">
+                    <span className="chip-icon">🎯</span>
+                    <span><strong>Payer Network:</strong> Aetna, BCBS, Cigna</span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Right Column: Staff Assignment & Capacity */}

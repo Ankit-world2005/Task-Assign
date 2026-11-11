@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { canAccessTab } from '../utils/departments';
 
 export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCategory }) => {
   const { currentUser, logout } = useAuth();
@@ -311,33 +312,37 @@ export const Navbar = ({ currentTab, setCurrentTab, activeCategory, onSelectCate
             )}
 
             {/* Enrollment Tab */}
-            <button
-              id="nav-tab-enrollment"
-              type="button"
-              className={`workspace-tab-btn ${currentTab === 'enrollment' ? 'active' : ''}`}
-              onClick={() => {
-                if (onSelectCategory) onSelectCategory('all');
-                setCurrentTab('enrollment');
-                setOpenDropdown(null);
-                setIsPinned(false);
-              }}
-            >
-              Enrollment
-            </button>
+            {canAccessTab(currentUser, 'enrollment') && (
+              <button
+                id="nav-tab-enrollment"
+                type="button"
+                className={`workspace-tab-btn ${currentTab === 'enrollment' ? 'active' : ''}`}
+                onClick={() => {
+                  if (onSelectCategory) onSelectCategory('all');
+                  setCurrentTab('enrollment');
+                  setOpenDropdown(null);
+                  setIsPinned(false);
+                }}
+              >
+                Enrollment
+              </button>
+            )}
 
             {/* Payment Posting Tab */}
-            <button
-              id="nav-tab-payment-posting"
-              type="button"
-              className={`workspace-tab-btn ${currentTab === 'payment-posting' ? 'active' : ''}`}
-              onClick={() => {
-                setCurrentTab('payment-posting');
-                setOpenDropdown(null);
-                setIsPinned(false);
-              }}
-            >
-              Payment Posting
-            </button>
+            {canAccessTab(currentUser, 'payment-posting') && (
+              <button
+                id="nav-tab-payment-posting"
+                type="button"
+                className={`workspace-tab-btn ${currentTab === 'payment-posting' ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentTab('payment-posting');
+                  setOpenDropdown(null);
+                  setIsPinned(false);
+                }}
+              >
+                Payment Posting
+              </button>
+            )}
 
             {/* Users Management Tab (Admin Only) */}
             {currentUser?.profile?.role === 'admin' && (

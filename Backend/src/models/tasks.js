@@ -1,7 +1,7 @@
 // Task and task-log queries. `q` is the database or an open transaction (same interface).
 import { likeContains, pyInt } from '../lib/py.js';
 import { currentYear, nowDb, todayUtc } from '../lib/time.js';
-import { isAdmin } from './users.js';
+import { getAllowedTaskCategories, isAdmin } from './users.js';
 
 export const CATEGORY_CHOICES = Object.freeze({
   credentialing: 'Credentialing',
@@ -117,10 +117,17 @@ function taskFilters(q, query, user = null) {
   const where = [];
   const params = [];
 
-  // Strict tenant/user isolation: non-admin employees can ONLY view tasks assigned to them (or unassigned tasks they created)
+  // Strict tenant/user isolation: non-admin employees can ONLY view assigned tasks in their assigned department checkboxes.
   if (user && !isAdmin(user)) {
     where.push('(t.assignee_id = ? OR (t.assignee_id IS NULL AND t.created_by_id = ?))');
     params.push(user.id, user.id);
+    const allowedCategories = getAllowedTaskCategories(user);
+    if (allowedCategories.length === 0) {
+      where.push('1 = 0');
+    } else {
+      where.push(`LOWER(t.category) IN (${placeholders(allowedCategories.length)})`);
+      params.push(...allowedCategories);
+    }
   } else {
     const assigneeId = lastParam(query, 'assignee_id');
     if (assigneeId) {
@@ -248,8 +255,23 @@ export async function getLogRow(q, id) {
   return q.get('SELECT * FROM tasks_tasklog WHERE id = ?', id);
 }
 
-export async function recentLogs(q, limit) {
-  return q.all('SELECT * FROM tasks_tasklog ORDER BY created_at DESC, id DESC LIMIT ?', limit);
+export async function recentLogs(q, limit, user = null) {
+  if (!user || isAdmin(user)) {
+    return q.all('SELECT * FROM tasks_tasklog ORDER BY created_at DESC, id DESC LIMIT ?', limit);
+  }
+  const allowedCategories = getAllowedTaskCategories(user);
+  if (allowedCategories.length === 0) return [];
+  return q.all(
+    `SELECT l.* FROM tasks_tasklog l
+       INNER JOIN tasks_task t ON t.id = l.task_id
+      WHERE (t.assignee_id = ? OR (t.assignee_id IS NULL AND t.created_by_id = ?))
+        AND LOWER(t.category) IN (${placeholders(allowedCategories.length)})
+      ORDER BY l.created_at DESC, l.id DESC LIMIT ?`,
+    user.id,
+    user.id,
+    ...allowedCategories,
+    limit,
+  );
 }
 
 /** Logs for many tasks, newest first. */

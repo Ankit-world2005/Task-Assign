@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import TaskLogsModal from './TaskLogsModal';
 import { FINISHED_STATUSES, isFollowUpOverdue } from '../utils/followUp';
 import { formatDate } from '../utils/dateFormat';
+import { canAccessCategory, parseDepartments } from '../utils/departments';
 import StatusBadge from './StatusBadge';
 
 export const ProfileDashboard = ({ setCurrentTab }) => {
@@ -38,11 +39,10 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
   }, []);
 
   const counts = dashData?.counts || { total: 0 };
-  const assignedTasks = dashData?.tasks?.total || [];
   const profileUser = dashData?.user || currentUser;
+  const assignedTasks = (dashData?.tasks?.total || []).filter((t) => canAccessCategory(profileUser, t.category));
 
-  // Task type cards in order: Total Task, ERA/EFT, Portal Creation, Password Reset, Follow-Up.
-  // Overdue follow-ups move out of their task type card into Follow-Up (Total still lists every task).
+  // Task type cards in order: Total Task, followed by only task types accessible to the user, then Follow-Up.
   const categoryConfigs = [
     {
       key: 'total',
@@ -52,6 +52,15 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
       icon: '📊',
       class: 'stat-total',
       match: () => true,
+    },
+    {
+      key: 'credentialing',
+      title: 'Credentialing',
+      badge: 'Enrollments',
+      desc: 'Provider credentialing and payer enrollment tasks',
+      icon: '🏥',
+      class: 'stat-portal-creation',
+      match: (t) => t.category === 'credentialing' && !isFollowUpOverdue(t),
     },
     {
       key: 'era_eft',
@@ -81,6 +90,24 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
       match: (t) => t.category === 'password_reset' && !isFollowUpOverdue(t),
     },
     {
+      key: 'portal_unblock',
+      title: 'Portal Unblock',
+      badge: 'Account Unlock',
+      desc: 'Unblock locked payer and clearinghouse portal accounts',
+      icon: '🔓',
+      class: 'stat-portal-creation',
+      match: (t) => t.category === 'portal_unblock' && !isFollowUpOverdue(t),
+    },
+    {
+      key: 'payment_posting',
+      title: 'Payment Posting',
+      badge: 'Posting Queue',
+      desc: 'Payment posting, ERA and EOB batch processing tasks',
+      icon: '💰',
+      class: 'stat-era-eft',
+      match: (t) => t.category === 'payment_posting' && !isFollowUpOverdue(t),
+    },
+    {
       key: 'follow_up',
       title: 'Follow-Up',
       badge: 'Overdue',
@@ -89,10 +116,12 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
       class: 'stat-follow-up',
       match: isFollowUpOverdue,
     },
-  ].map((cfg) => {
-    const tasks = assignedTasks.filter(cfg.match);
-    return { ...cfg, tasks, count: tasks.length };
-  });
+  ]
+    .filter((cfg) => cfg.key === 'total' || cfg.key === 'follow_up' || canAccessCategory(profileUser, cfg.key))
+    .map((cfg) => {
+      const tasks = assignedTasks.filter(cfg.match);
+      return { ...cfg, tasks, count: tasks.length };
+    });
 
   // Same rules as profile_dashboard_api: dates are server (UTC) dates, finished tasks are neither new nor old
   const today = new Date().toISOString().split('T')[0];
@@ -229,7 +258,7 @@ export const ProfileDashboard = ({ setCurrentTab }) => {
             <h1>{profileUser?.full_name || profileUser?.username}</h1>
             <p>
               {profileUser?.email || `${profileUser?.username}@us24solutions.com`} •{' '}
-              {profileUser?.profile?.department || 'Operations & Enrollment'}
+              {parseDepartments(profileUser?.profile?.department).join(', ') || 'No Department Assigned'}
             </p>
             <div className="profile-badge-strip">
               <span className="profile-info-pill highlight">

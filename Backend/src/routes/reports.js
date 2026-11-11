@@ -11,7 +11,7 @@ import {
   listTasksForAssignee,
   recentLogs,
 } from '../models/tasks.js';
-import { displayName, fullName, isAdmin, listWorkloadUsers } from '../models/users.js';
+import { displayName, fullName, getAllowedTaskCategories, canAccessTaskCategory, isAdmin, listWorkloadUsers } from '../models/users.js';
 import { serializeLog, serializeTasks, serializeUser, userNames } from '../serializers.js';
 
 const ACTIVE_STATUSES = ['Request', 'Pending', 'Assigned', 'In Progress', 'Pending Info'];
@@ -32,13 +32,26 @@ export function reportRoutes({ db }) {
     get: async (req, res) => {
       const isStaff = !isAdmin(req.user);
       const user = req.user;
-      const userFilter = isStaff && user ? 'assignee_id = ?' : null;
-      const userParams = isStaff && user ? [user.id] : [];
+      const allowedCategories = isStaff ? getAllowedTaskCategories(user) : null;
+
+      const staffClauses = [];
+      const staffParams = [];
+      if (isStaff && user) {
+        staffClauses.push('assignee_id = ?');
+        staffParams.push(user.id);
+        if (allowedCategories.length === 0) {
+          staffClauses.push('1 = 0');
+        } else {
+          staffClauses.push(`LOWER(category) IN (${placeholders(allowedCategories)})`);
+          staffParams.push(...allowedCategories);
+        }
+      }
+      const userFilter = staffClauses.length ? staffClauses.join(' AND ') : null;
 
       const scopedCount = async (clause, ...params) => {
         if (!userFilter) return countTasks(db, clause, ...params);
-        if (!clause) return countTasks(db, userFilter, ...userParams);
-        return countTasks(db, `${clause} AND ${userFilter}`, ...params, ...userParams);
+        if (!clause) return countTasks(db, userFilter, ...staffParams);
+        return countTasks(db, `${clause} AND ${userFilter}`, ...params, ...staffParams);
       };
 
       const total = await scopedCount();
@@ -48,10 +61,10 @@ export function reportRoutes({ db }) {
         `SELECT assignee_id, COUNT(*) AS total,
            SUM(CASE WHEN status IN (${placeholders(ACTIVE_STATUSES)}) THEN 1 ELSE 0 END) AS active,
            SUM(CASE WHEN status IN (${placeholders(DONE_STATUSES)}) THEN 1 ELSE 0 END) AS completed
-         FROM tasks_task WHERE assignee_id IS NOT NULL ${isStaff && user ? 'AND assignee_id = ?' : ''} GROUP BY assignee_id`,
+         FROM tasks_task WHERE assignee_id IS NOT NULL ${userFilter ? `AND ${userFilter}` : ''} GROUP BY assignee_id`,
         ...ACTIVE_STATUSES,
         ...DONE_STATUSES,
-        ...(isStaff && user ? [user.id] : []),
+        ...staffParams,
       );
       const workload = new Map(workloadRows.map((row) => [row.assignee_id, row]));
       const allUsers = isStaff && user ? [user] : await listWorkloadUsers(db);
@@ -82,11 +95,13 @@ export function reportRoutes({ db }) {
           credentialing: await scopedCount('category = ?', 'credentialing'),
           portal_creation: await scopedCount('category = ?', 'portal_creation'),
           era_eft: await scopedCount('category = ?', 'era_eft'),
+          password_reset: await scopedCount('category = ?', 'password_reset'),
+          portal_unblock: await scopedCount('category = ?', 'portal_unblock'),
           payment_posting: await scopedCount('category = ?', 'payment_posting'),
           general: await scopedCount('category = ?', 'general'),
         },
         assignees,
-        recent_logs: (await recentLogs(db, 8)).map((log) => serializeLog(log, names)),
+        recent_logs: (await recentLogs(db, 8, req.user)).map((log) => serializeLog(log, names)),
       });
     },
   });
@@ -96,7 +111,7 @@ export function reportRoutes({ db }) {
     get: async (req, res) => {
       const user = req.user;
       const today = todayUtc();
-      const tasks = await listTasksForAssignee(db, user.id);
+      const tasks = (await listTasksForAssignee(db, user.id)).filter((t) => canAccessTaskCategory(user, t.category));
       const serialized = await serializeTasks(db, tasks);
       const pick = (test) => serialized.filter((_, i) => test(tasks[i]));
       const isDone = (t) => DONE_STATUSES.includes(t.status);

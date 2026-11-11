@@ -120,6 +120,27 @@ export const api = {
   },
 
   importCsv: async (file, category) => api.importExcel(file, category),
+
+  // Payment Posting Check-Sheet (completed task log entries)
+  getPaymentCheckSheet: async () => {
+    const res = await apiClient.get('/payment-posting/check-sheet/');
+    return res.data;
+  },
+
+  createPaymentCheckSheetEntry: async (entryData) => {
+    const res = await apiClient.post('/payment-posting/check-sheet/', entryData);
+    return res.data;
+  },
+
+  updatePaymentCheckSheetEntry: async (id, entryData) => {
+    const res = await apiClient.patch(`/payment-posting/check-sheet/${id}/`, entryData);
+    return res.data;
+  },
+
+  deletePaymentCheckSheetEntry: async (id) => {
+    const res = await apiClient.delete(`/payment-posting/check-sheet/${id}/`);
+    return res.data;
+  },
 };
 
 export default api;

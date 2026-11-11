@@ -20,7 +20,9 @@ let base;
 const sentEmails = [];
 const ids = {};
 
-async function addUser(username, { admin = false } = {}) {
+const ALL_DEPARTMENTS = 'Credentialing, Portal Creation, ERA / EFT, Password Reset, Portal Unblock, Enrollment, Payment Posting';
+
+async function addUser(username, { admin = false, department = ALL_DEPARTMENTS } = {}) {
   const row = await db.get(
     `INSERT INTO auth_user (password, last_login, is_superuser, username, last_name, email, is_staff, is_active, date_joined, first_name)
      VALUES (?, NULL, ?, ?, 'Tester', ?, ?, 1, ?, ?) RETURNING id`,
@@ -34,9 +36,10 @@ async function addUser(username, { admin = false } = {}) {
   );
   await db.run(
     `INSERT INTO tasks_userprofile (role, employee_id, phone, department, avatar_color, current_otp, user_id, otp_created_at)
-     VALUES (?, ?, '', 'Operations & Enrollment', '#2563eb', NULL, ?, NULL)`,
+     VALUES (?, ?, '', ?, '#2563eb', NULL, ?, NULL)`,
     admin ? 'admin' : 'employee',
     `EMP-${row.id}`,
+    department,
     row.id,
   );
   ids[username] = Number(row.id);
@@ -197,6 +200,11 @@ describe('access control', () => {
     assert.equal(created.data.user.is_active, false, '"false" means inactive');
     assert.equal(created.data.user.profile.employee_id, `US24-EMP${String(created.data.user.id).padStart(2, '0')}`);
     assert.equal((await admin('POST', '/api/auth/users/create/', payload)).status, 400);
+
+    const allDepartments = 'Credentialing, Portal Creation, ERA / EFT, Password Reset, Portal Unblock, Enrollment, Payment Posting';
+    const updated = await admin('POST', `/api/auth/users/${created.data.user.id}/update/`, { department: allDepartments });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.user.profile.department, allDepartments);
   });
 
   test('only admin sessions can create, import, or reassign tasks', async () => {
@@ -381,5 +389,131 @@ describe('import and export', () => {
     assert.equal(meta.remarks, 'Check denial note');
     assert.equal(meta.sup_qa, 'Approved');
     assert.equal(meta.time_by_manish, '10 min');
+  });
+});
+
+describe('department task isolation', () => {
+  test('non-admin users can only access tasks matching their checked department checkboxes', async () => {
+    await addUser('dept_multi', { department: 'Credentialing, ERA / EFT, Portal Unblock' });
+    await addUser('dept_enroll', { department: 'Enrollment' });
+    await addUser('dept_none', { department: 'Management' });
+
+    const admin = client();
+    await signIn(admin, 'boss');
+
+    const credTask = (await admin('POST', '/api/tasks/', { category: 'credentialing', project_name: 'P1', insurance_name: 'Aetna', assignee: ids.dept_multi })).data;
+    const eraTask = (await admin('POST', '/api/tasks/', { category: 'era_eft', project_name: 'P2', insurance_name: 'BCBS', assignee: ids.dept_multi })).data;
+    const unblockTask = (await admin('POST', '/api/tasks/', { category: 'portal_unblock', project_name: 'P3', insurance_name: 'Cigna', assignee: ids.dept_multi })).data;
+    const blockedPortal = (await admin('POST', '/api/tasks/', { category: 'portal_creation', project_name: 'P4', insurance_name: 'Humana', assignee: ids.dept_multi })).data;
+    const blockedPosting = (await admin('POST', '/api/tasks/', { category: 'payment_posting', project_name: 'P5', insurance_name: 'Posting', assignee: ids.dept_multi })).data;
+
+    const multi = client();
+    await signIn(multi, 'dept_multi');
+
+    const listRes = await multi('GET', '/api/tasks/');
+    assert.equal(listRes.status, 200);
+    assert.deepEqual(
+      listRes.data.map((t) => t.id).sort((a, b) => a - b),
+      [credTask.id, eraTask.id, unblockTask.id].sort((a, b) => a - b),
+    );
+    assert.deepEqual((await multi('GET', '/api/tasks/?category=portal_creation')).data, []);
+
+    assert.equal((await multi('GET', `/api/tasks/${credTask.id}/`)).status, 200);
+    assert.equal((await multi('GET', `/api/tasks/${blockedPortal.id}/`)).status, 403);
+    assert.equal((await multi('POST', `/api/tasks/${blockedPosting.id}/add-log/`, { remarks: 'blocked' })).status, 403);
+
+    const stats = await multi('GET', '/api/stats/');
+    assert.equal(stats.status, 200);
+    assert.equal(stats.data.kpis.total, 3);
+    assert.equal(stats.data.categories.portal_creation, 0);
+    assert.equal(stats.data.categories.payment_posting, 0);
+    assert.ok(stats.data.recent_logs.every((l) => [credTask.id, eraTask.id, unblockTask.id].includes(l.task)));
+
+    const profileDash = await multi('GET', '/api/profile/dashboard/');
+    assert.equal(profileDash.status, 200);
+    assert.equal(profileDash.data.counts.total, 3);
+
+    const csvRes = await multi('GET', '/api/export-csv/');
+    assert.ok(csvRes.data.includes(credTask.task_id));
+    assert.ok(!csvRes.data.includes(blockedPortal.task_id));
+    assert.ok(!csvRes.data.includes(blockedPosting.task_id));
+
+    // 'Enrollment' grants credentialing, portal_creation, era_eft, but not payment_posting
+    const enrollOk = (await admin('POST', '/api/tasks/', { category: 'portal_creation', project_name: 'E1', insurance_name: 'Aetna', assignee: ids.dept_enroll })).data;
+    const enrollBlocked = (await admin('POST', '/api/tasks/', { category: 'payment_posting', project_name: 'E2', insurance_name: 'Posting', assignee: ids.dept_enroll })).data;
+    const enrollClient = client();
+    await signIn(enrollClient, 'dept_enroll');
+    assert.deepEqual((await enrollClient('GET', '/api/tasks/')).data.map((t) => t.id), [enrollOk.id]);
+    assert.equal((await enrollClient('GET', `/api/tasks/${enrollBlocked.id}/`)).status, 403);
+
+    // Non-checkbox / cleared department grants zero task access
+    const noneTask = (await admin('POST', '/api/tasks/', { category: 'credentialing', project_name: 'N1', insurance_name: 'Aetna', assignee: ids.dept_none })).data;
+    const noneClient = client();
+    await signIn(noneClient, 'dept_none');
+    assert.deepEqual((await noneClient('GET', '/api/tasks/')).data, []);
+    assert.equal((await noneClient('GET', `/api/tasks/${noneTask.id}/`)).status, 403);
+    assert.equal((await noneClient('GET', '/api/stats/')).data.kpis.total, 0);
+  });
+
+  test('payment posting check-sheet lets all Payment Posting users add, view, and update 17-column entries, blocking non-posting users', async () => {
+    await addUser('pp_user1', { department: 'Payment Posting' });
+    await addUser('pp_user2', { department: 'Payment Posting' });
+    await addUser('cred_only', { department: 'Credentialing' });
+
+    const u1 = client();
+    await signIn(u1, 'pp_user1');
+    const created1 = await u1('POST', '/api/payment-posting/check-sheet/', {
+      clinic: 'ARRA',
+      payer: 'Aetna',
+      eob_source: 'Availity',
+      method: 'EFT',
+      era_eob: 'ERA',
+      check_no: 'CHK-9001',
+      check_date: '2026-11-10',
+      check_amount: '1500.00',
+      posted_amount: '1200.00',
+      remaining_amount: '300.00',
+      recoupment: '0.00',
+      status: 'Partially Posted',
+      posted_date: '2026-11-11',
+      posted_by: 'Pp_user1 Tester',
+      remarks: 'Initial post',
+      clearance_date: '',
+      error_note: '',
+      created_by: ids.cred_only, // must be ignored in favor of req.user
+    });
+    assert.equal(created1.status, 201);
+    assert.equal(created1.data.created_by, ids.pp_user1);
+    assert.equal(created1.data.clinic, 'ARRA');
+    assert.equal(created1.data.check_no, 'CHK-9001');
+
+    const u2 = client();
+    await signIn(u2, 'pp_user2');
+    const listU2 = await u2('GET', '/api/payment-posting/check-sheet/');
+    assert.equal(listU2.status, 200);
+    assert.equal(listU2.data.length, 1);
+    assert.equal(listU2.data[0].payer, 'Aetna');
+
+    const updated = await u2('PATCH', `/api/payment-posting/check-sheet/${created1.data.id}/`, {
+      posted_amount: '1500.00',
+      remaining_amount: '0.00',
+      status: 'Posted',
+      clearance_date: '2026-11-12',
+      error_note: 'None',
+    });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.status, 'Posted');
+    assert.equal(updated.data.clearance_date, '2026-11-12');
+    assert.equal(updated.data.remaining_amount, '0.00');
+
+    // Non-creator non-admin cannot delete someone else's check-sheet entry
+    assert.equal((await u2('DELETE', `/api/payment-posting/check-sheet/${created1.data.id}/`)).status, 403);
+
+    // Non-Payment-Posting user cannot access, add, or update Check-Sheet
+    const nonPp = client();
+    await signIn(nonPp, 'cred_only');
+    assert.equal((await nonPp('GET', '/api/payment-posting/check-sheet/')).status, 403);
+    assert.equal((await nonPp('POST', '/api/payment-posting/check-sheet/', { clinic: 'X' })).status, 403);
+    assert.equal((await nonPp('PATCH', `/api/payment-posting/check-sheet/${created1.data.id}/`, { status: 'Posted' })).status, 403);
   });
 });

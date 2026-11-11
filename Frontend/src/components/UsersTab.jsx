@@ -1,6 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
+import { DEPARTMENT_OPTIONS, parseDepartments } from '../utils/departments';
+
+const DepartmentMultiSelect = ({ id, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
+  const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const panelId = `${id}-panel`;
+  const selected = parseDepartments(value);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', handleOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const handleToggle = () => {
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const modalRect = triggerRef.current.closest('.glass-panel')?.getBoundingClientRect();
+      const bottomEdge = modalRect ? Math.min(window.innerHeight, modalRect.bottom) : window.innerHeight;
+      const topEdge = modalRect ? Math.max(0, modalRect.top) : 0;
+      const spaceBelow = bottomEdge - rect.bottom;
+      const spaceAbove = rect.top - topEdge;
+      setOpenUp(spaceBelow < 240 && spaceAbove > spaceBelow);
+    }
+    setIsOpen((prev) => !prev);
+  };
+
+  const toggleDepartment = (dept) => {
+    const next = new Set(selected);
+    if (next.has(dept)) next.delete(dept);
+    else next.add(dept);
+    onChange(DEPARTMENT_OPTIONS.filter((opt) => next.has(opt)).join(', '));
+  };
+
+  return (
+    <div className="dept-multiselect" ref={containerRef}>
+      <button
+        ref={triggerRef}
+        id={id}
+        type="button"
+        className={`dept-multiselect-trigger${isOpen ? ' is-open' : ''}`}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={handleToggle}
+      >
+        <span className={selected.length === 0 ? 'dept-multiselect-placeholder' : 'dept-multiselect-value'}>
+          {selected.length > 0 ? selected.join(', ') : 'Select departments...'}
+        </span>
+        <svg
+          className="dept-multiselect-caret"
+          width="16"
+          height="16"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div id={panelId} className={`dept-multiselect-panel${openUp ? ' is-open-up' : ''}`}>
+          <fieldset className="dept-multiselect-fieldset">
+            <legend className="sr-only">Department tasks</legend>
+            <div className="dept-multiselect-actions">
+              <span className="dept-multiselect-count">
+                {selected.length} of {DEPARTMENT_OPTIONS.length} selected
+              </span>
+              <div className="dept-multiselect-action-group">
+                <button
+                  type="button"
+                  className="dept-multiselect-action-btn"
+                  onClick={() => onChange(DEPARTMENT_OPTIONS.join(', '))}
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  className="dept-multiselect-action-btn"
+                  onClick={() => onChange('')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="dept-multiselect-grid">
+              {DEPARTMENT_OPTIONS.map((dept, index) => {
+                const checkboxId = `${id}-opt-${index}`;
+                const checked = selected.includes(dept);
+                return (
+                  <div key={dept} className={`dept-multiselect-option${checked ? ' is-checked' : ''}`}>
+                    <input
+                      id={checkboxId}
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleDepartment(dept)}
+                    />
+                    <label htmlFor={checkboxId}>{dept}</label>
+                  </div>
+                );
+              })}
+            </div>
+          </fieldset>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const UsersTab = () => {
   const { currentUser, usersList, reloadUsers } = useAuth();
@@ -47,7 +173,7 @@ export const UsersTab = () => {
     role: 'employee',
     employee_id: '',
     phone: '',
-    department: 'Operations & Enrollment',
+    department: 'Credentialing',
     is_active: true,
     avatar_color: '#2563eb',
   };
@@ -141,7 +267,7 @@ export const UsersTab = () => {
         role: editingUser.profile?.role || 'employee',
         employee_id: editingUser.profile?.employee_id || '',
         phone: editingUser.profile?.phone || '',
-        department: editingUser.profile?.department || 'Operations & Enrollment',
+        department: editingUser.profile?.department ?? '',
         avatar_color: editingUser.profile?.avatar_color || '#2563eb',
         is_active: editingUser.is_active,
       });
@@ -511,16 +637,28 @@ export const UsersTab = () => {
 
                       {/* Department Column */}
                       <td style={{ padding: '14px 18px' }}>
-                        <span style={{
-                          fontSize: '0.8rem',
-                          color: '#555b63',
-                          background: 'rgba(11, 13, 16, 0.04)',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid rgba(11, 13, 16, 0.08)'
-                        }}>
-                          {u.profile?.department || 'Operations'}
-                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {(u.profile?.department || 'Operations')
+                            .split(',')
+                            .map((dept) => dept.trim())
+                            .filter(Boolean)
+                            .map((dept) => (
+                              <span
+                                key={dept}
+                                style={{
+                                  fontSize: '0.8rem',
+                                  color: '#555b63',
+                                  background: 'rgba(11, 13, 16, 0.04)',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(11, 13, 16, 0.08)',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {dept}
+                              </span>
+                            ))}
+                        </div>
                       </td>
 
                       {/* Role Column */}
@@ -906,13 +1044,11 @@ export const UsersTab = () => {
               </div>
 
               <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="form-label">Department</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Operations & Enrollment"
+                <label className="form-label" htmlFor="create-department">Department</label>
+                <DepartmentMultiSelect
+                  id="create-department"
                   value={createForm.department}
-                  onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}
+                  onChange={(val) => setCreateForm({ ...createForm, department: val })}
                 />
               </div>
 
@@ -1080,15 +1216,14 @@ export const UsersTab = () => {
               </div>
 
               <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label className="form-label">Department</label>
-                <input
-                  type="text"
-                  className="form-input"
+                <label className="form-label" htmlFor="edit-department">Department</label>
+                <DepartmentMultiSelect
+                  id="edit-department"
                   value={editingUser.profile?.department || ''}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setEditingUser({
                       ...editingUser,
-                      profile: { ...(editingUser.profile || {}), department: e.target.value },
+                      profile: { ...(editingUser.profile || {}), department: val },
                     })
                   }
                 />
