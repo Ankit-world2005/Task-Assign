@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import './index.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { canAccessTab } from './utils/departments';
 import Navbar from './components/Navbar';
-import LoginPage from './components/LoginPage';
-import DashboardTab from './components/DashboardTab';
-import TaskAssignTab from './components/TaskAssignTab';
-import ActionTab from './components/ActionTab';
-import EnrollmentTab from './components/EnrollmentTab';
-import UsersTab from './components/UsersTab';
-import ProfileDashboard from './components/ProfileDashboard';
-import PaymentPostingTab from './components/PaymentPostingTab';
+
+const LoginPage = lazy(() => import('./components/LoginPage'));
+const DashboardTab = lazy(() => import('./components/DashboardTab'));
+const TaskAssignTab = lazy(() => import('./components/TaskAssignTab'));
+const ActionTab = lazy(() => import('./components/ActionTab'));
+const EnrollmentTab = lazy(() => import('./components/EnrollmentTab'));
+const UsersTab = lazy(() => import('./components/UsersTab'));
+const ProfileDashboard = lazy(() => import('./components/ProfileDashboard'));
+const PaymentPostingTab = lazy(() => import('./components/PaymentPostingTab'));
+
+function TabFallback() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '240px' }}>
+      <div className="login-spinner" style={{ width: '34px', height: '34px', borderWidth: '3px' }} />
+    </div>
+  );
+}
 
 function AppContent() {
   const { currentUser, isLoading } = useAuth();
@@ -34,7 +43,11 @@ function AppContent() {
 
   // If user is not authenticated, display full Two-Step Verification Login Page
   if (!currentUser) {
-    return <LoginPage />;
+    return (
+      <Suspense fallback={<TabFallback />}>
+        <LoginPage />
+      </Suspense>
+    );
   }
 
   const activeTab = canAccessTab(currentUser, currentTab) ? currentTab : 'dashboard';
@@ -70,7 +83,8 @@ function AppContent() {
 
       {/* Main Tab View */}
       <main className="main-content" style={{ flex: 1 }}>
-        {activeTab === 'dashboard' && (
+        <Suspense fallback={<TabFallback />}>
+          {activeTab === 'dashboard' && (
           <DashboardTab
             setCurrentTab={selectTab}
             onSelectStaff={handleSelectStaff}
@@ -148,9 +162,10 @@ function AppContent() {
             onSelectStaff={handleSelectStaff}
           />
         )}
-        {activeTab === 'users' && currentUser?.profile?.role === 'admin' && (
-          <UsersTab />
-        )}
+          {activeTab === 'users' && currentUser?.profile?.role === 'admin' && (
+            <UsersTab />
+          )}
+        </Suspense>
       </main>
 
       {/* Footer */}

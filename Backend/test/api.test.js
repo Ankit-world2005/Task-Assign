@@ -562,4 +562,54 @@ describe('department task isolation', () => {
     });
     assert.equal(disabled.ssl, false);
   });
+
+  test('/api/stats consolidates KPI/category counts cleanly and ignores other-year task IDs', async () => {
+    await addUser('stats_admin', { admin: true });
+    await addUser('stats_staff', { department: 'Credentialing' });
+    const admin = client();
+    const staff = client();
+    await signIn(admin, 'stats_admin');
+    await signIn(staff, 'stats_staff');
+
+    // Empty filtered stats for staff with no assigned tasks must return numeric zeros (not null from SUM).
+    const emptyStats = await staff('GET', '/api/stats/');
+    assert.equal(emptyStats.status, 200);
+    assert.deepEqual(emptyStats.data.kpis, {
+      total: 0,
+      in_progress: 0,
+      completed: 0,
+      pending: 0,
+      assigned: 0,
+      completion_rate: 0,
+    });
+    assert.equal(emptyStats.data.categories.credentialing, 0);
+
+    // Older-year custom task ID should not inflate next-id numbering for current year.
+    const oldYearTask = await admin('POST', '/api/tasks/', {
+      task_id: 'TSK-2024-999',
+      category: 'credentialing',
+      project_name: 'Legacy Clinic',
+      task_name: 'Prior Year Record',
+      insurance_name: 'Medicare',
+      assignee: ids.stats_staff,
+      status: 'In Progress',
+    });
+    assert.equal(oldYearTask.status, 201);
+    assert.equal(oldYearTask.data.task_id, 'TSK-2024-999');
+
+    const nextId = await admin('GET', '/api/tasks/next-id/');
+    assert.equal(nextId.status, 200);
+    assert.notEqual(nextId.data.next_num, 1000);
+
+    const adminStats = await admin('GET', '/api/stats/');
+    assert.equal(adminStats.status, 200);
+    assert.ok(adminStats.data.kpis.total >= 1);
+    assert.ok(adminStats.data.categories.credentialing >= 1);
+
+    const staffStats = await staff('GET', '/api/stats/');
+    assert.equal(staffStats.status, 200);
+    assert.equal(staffStats.data.kpis.total, 1);
+    assert.equal(staffStats.data.kpis.in_progress, 1);
+    assert.equal(staffStats.data.categories.credentialing, 1);
+  });
 });

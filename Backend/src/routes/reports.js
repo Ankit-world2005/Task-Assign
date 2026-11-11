@@ -6,7 +6,6 @@ import { todayUtc, toUsDate } from '../lib/time.js';
 import {
   CATEGORY_CHOICES,
   FOLLOW_UP_CHOICES,
-  countTasks,
   listTasks,
   listTasksForAssignee,
   recentLogs,
@@ -48,14 +47,24 @@ export function reportRoutes({ db }) {
       }
       const userFilter = staffClauses.length ? staffClauses.join(' AND ') : null;
 
-      const scopedCount = async (clause, ...params) => {
-        if (!userFilter) return countTasks(db, clause, ...params);
-        if (!clause) return countTasks(db, userFilter, ...staffParams);
-        return countTasks(db, `${clause} AND ${userFilter}`, ...params, ...staffParams);
-      };
-
-      const total = await scopedCount();
-      const completed = await scopedCount('status = ?', 'Completed');
+      const agg = await db.get(
+        `SELECT COUNT(*) AS total,
+                SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE WHEN status IN ('Pending', 'Pending Info', 'Request') THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'Assigned' THEN 1 ELSE 0 END) AS assigned,
+                SUM(CASE WHEN category = 'credentialing' THEN 1 ELSE 0 END) AS credentialing,
+                SUM(CASE WHEN category = 'portal_creation' THEN 1 ELSE 0 END) AS portal_creation,
+                SUM(CASE WHEN category = 'era_eft' THEN 1 ELSE 0 END) AS era_eft,
+                SUM(CASE WHEN category = 'password_reset' THEN 1 ELSE 0 END) AS password_reset,
+                SUM(CASE WHEN category = 'portal_unblock' THEN 1 ELSE 0 END) AS portal_unblock,
+                SUM(CASE WHEN category = 'payment_posting' THEN 1 ELSE 0 END) AS payment_posting,
+                SUM(CASE WHEN category = 'general' THEN 1 ELSE 0 END) AS general
+           FROM tasks_task ${userFilter ? `WHERE ${userFilter}` : ''}`,
+        ...staffParams,
+      );
+      const total = Number(agg?.total ?? 0);
+      const completed = Number(agg?.completed ?? 0);
 
       const workloadRows = await db.all(
         `SELECT assignee_id, COUNT(*) AS total,
@@ -85,20 +94,20 @@ export function reportRoutes({ db }) {
       res.json({
         kpis: {
           total,
-          in_progress: await scopedCount('status = ?', 'In Progress'),
+          in_progress: Number(agg?.in_progress ?? 0),
           completed,
-          pending: await scopedCount('status IN (?, ?, ?)', 'Pending', 'Pending Info', 'Request'),
-          assigned: await scopedCount('status = ?', 'Assigned'),
+          pending: Number(agg?.pending ?? 0),
+          assigned: Number(agg?.assigned ?? 0),
           completion_rate: total > 0 ? Number(((completed / total) * 100).toFixed(1)) : 0,
         },
         categories: {
-          credentialing: await scopedCount('category = ?', 'credentialing'),
-          portal_creation: await scopedCount('category = ?', 'portal_creation'),
-          era_eft: await scopedCount('category = ?', 'era_eft'),
-          password_reset: await scopedCount('category = ?', 'password_reset'),
-          portal_unblock: await scopedCount('category = ?', 'portal_unblock'),
-          payment_posting: await scopedCount('category = ?', 'payment_posting'),
-          general: await scopedCount('category = ?', 'general'),
+          credentialing: Number(agg?.credentialing ?? 0),
+          portal_creation: Number(agg?.portal_creation ?? 0),
+          era_eft: Number(agg?.era_eft ?? 0),
+          password_reset: Number(agg?.password_reset ?? 0),
+          portal_unblock: Number(agg?.portal_unblock ?? 0),
+          payment_posting: Number(agg?.payment_posting ?? 0),
+          general: Number(agg?.general ?? 0),
         },
         assignees,
         recent_logs: (await recentLogs(db, 8, req.user)).map((log) => serializeLog(log, names)),

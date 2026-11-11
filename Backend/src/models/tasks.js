@@ -90,9 +90,10 @@ async function taskIdTaken(q, taskId, excludePk) {
 /** Next free 'TSK-<year>-NNN' id: one past the highest number used this year. */
 export async function generateTaskId(q, excludePk = null) {
   const year = currentYear();
+  const yearPrefix = `TSK-${year}-`;
   const pattern = new RegExp(`^TSK-${year}-(\\d+)`);
   let maxNum = 0;
-  for (const { task_id: existing } of await q.all('SELECT task_id FROM tasks_task')) {
+  for (const { task_id: existing } of await q.all('SELECT task_id FROM tasks_task WHERE task_id LIKE ?', `${yearPrefix}%`)) {
     const match = pattern.exec(existing ?? '');
     if (match) maxNum = Math.max(maxNum, Number.parseInt(match[1], 10));
   }
