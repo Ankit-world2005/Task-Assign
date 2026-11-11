@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm --prefix Frontend install --no-package-lock --no-audit --no-fund && npm --prefix Backend install --no-package-lock --no-audit --no-fund",
+  "buildCommand": "npm --prefix Frontend run build",
+  "outputDirectory": "Frontend/dist",
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "Backend/src/db/*.sql",
+      "excludeFiles": "Backend/.env"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api/index?__path="
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index?__path=$1"
+    },
+    {
+      "source": "/((?!api(?:/|$)).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -39,8 +39,12 @@ export class PostgresDatabase {
   dialect = 'postgres';
   #pool;
 
-  constructor({ host, port, user, password, name }) {
-    this.#pool = new pg.Pool({ host, port, user, password, database: name, types, options: '-c TimeZone=UTC' });
+  constructor({ host, port, user, password, name, connectionString, ssl }) {
+    const poolConfig = connectionString
+      ? { connectionString, types, options: '-c TimeZone=UTC', max: process.env.VERCEL ? 3 : 10 }
+      : { host, port, user, password, database: name, types, options: '-c TimeZone=UTC', max: process.env.VERCEL ? 3 : 10 };
+    if (ssl !== undefined) poolConfig.ssl = ssl;
+    this.#pool = new pg.Pool(poolConfig);
   }
 
   async init() {

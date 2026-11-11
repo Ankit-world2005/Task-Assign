@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { createApp } from '../src/app.js';
+import { postgresConfigFromEnv } from '../src/config.js';
 import { openDatabase } from '../src/db/index.js';
 import { checkPassword } from '../src/lib/passwords.js';
 import { nowDb } from '../src/lib/time.js';
@@ -536,5 +537,29 @@ describe('department task isolation', () => {
     assert.equal((await nonPp('GET', '/api/payment-posting/check-sheet/')).status, 403);
     assert.equal((await nonPp('POST', '/api/payment-posting/check-sheet/', { clinic: 'X' })).status, 403);
     assert.equal((await nonPp('PATCH', `/api/payment-posting/check-sheet/${created1.data.id}/`, { status: 'Posted' })).status, 403);
+  });
+
+  test('postgresConfigFromEnv parses DATABASE_URL and TLS defaults safely', () => {
+    const remote = postgresConfigFromEnv({
+      DATABASE_URL: 'postgresql://appuser:s%40cret@ep-cool-host.neon.tech:6543/us24db?sslmode=require',
+    });
+    assert.equal(remote.engine, 'postgres');
+    assert.equal(remote.host, 'ep-cool-host.neon.tech');
+    assert.equal(remote.port, 6543);
+    assert.equal(remote.name, 'us24db');
+    assert.equal(remote.user, 'appuser');
+    assert.equal(remote.password, 's@cret');
+    assert.deepEqual(remote.ssl, { rejectUnauthorized: false });
+
+    const local = postgresConfigFromEnv({
+      POSTGRES_URL: 'postgres://postgres:pass@localhost:5432/localdb',
+    });
+    assert.equal(local.host, 'localhost');
+    assert.equal(local.ssl, false);
+
+    const disabled = postgresConfigFromEnv({
+      DATABASE_URL: 'postgresql://postgres:pass@db.example.com:5432/prod?sslmode=disable',
+    });
+    assert.equal(disabled.ssl, false);
   });
 });
