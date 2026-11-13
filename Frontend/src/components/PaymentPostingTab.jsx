@@ -924,6 +924,67 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       {/* ============================================================ */}
       {isAdminUser && currentSubTab === 'assign' && (
         <div className="glass-panel" style={{ padding: '2rem 2.5rem', borderRadius: '12px' }}>
+          {/* Import Tasks Banner Card */}
+          <div
+            style={{
+              background: 'rgba(37, 99, 235, 0.04)',
+              border: '1px dashed rgba(37, 99, 235, 0.35)',
+              borderRadius: '10px',
+              padding: '14px 18px',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '14px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  background: 'rgba(37, 99, 235, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem',
+                  flexShrink: 0,
+                }}
+              >
+                📤
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--ink)' }}>
+                  Import Payment Posting Tasks (Excel / CSV)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Upload Excel (.xlsx, .xls) or CSV spreadsheet to bulk import Payment Posting tasks into the queue
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setShowImportModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                fontSize: '0.84rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              title="Bulk import tasks from Excel (.xlsx, .xls) or CSV"
+            >
+              <span>📤</span>
+              <span>Import Task</span>
+            </button>
+          </div>
+
           {/* The 13 Columns Form */}
           <form onSubmit={handleSubmit}>
             {/* Row 1: Date & Project Details */}
@@ -1119,7 +1180,24 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             </div>
 
             {/* Submit Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowImportModal(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '10px 18px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                }}
+                title="Bulk import tasks from Excel (.xlsx, .xls) or CSV"
+              >
+                <span>📤</span>
+                <span>Import Task</span>
+              </button>
               <button
                 type="button"
                 className="btn-secondary"
