@@ -561,60 +561,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </div>
         </div>
 
-        {/* Header Right: Action Tab, Task Tab & Check-Sheet Sub-Tab Buttons */}
+        {/* Header Right: Check-Sheet, Import Task & Task Sub-Tab Toggle Buttons */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            id="pp-subtab-action"
-            type="button"
-            aria-pressed={currentSubTab === 'action'}
-            onClick={() => setActiveSubTab('action')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '999px',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-              background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-              color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
-              transition: 'all 0.15s ease',
-            }}
-            title="Review payment posting queues, update task statuses, and record final times"
-          >
-            <span>📋</span>
-            <span>Action Tab</span>
-          </button>
-
-          {isAdminUser && (
-            <button
-              id="pp-subtab-task"
-              type="button"
-              aria-pressed={currentSubTab === 'assign'}
-              onClick={() => setActiveSubTab('assign')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                border: currentSubTab === 'assign' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-                background: currentSubTab === 'assign' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-                color: currentSubTab === 'assign' ? '#ffffff' : 'var(--text-main)',
-                transition: 'all 0.15s ease',
-              }}
-              title="Assign Payment Posting Tasks (13 Input Fields Form)"
-            >
-              <span>⚡</span>
-              <span>Task</span>
-            </button>
-          )}
-
           <button
             id="pp-subtab-check-sheet"
             type="button"
@@ -639,6 +587,55 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             <span>✅</span>
             <span>Check-Sheet</span>
           </button>
+
+          {isAdminUser ? (
+            <button
+              type="button"
+              aria-pressed={currentSubTab === 'action'}
+              onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '999px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>⚡</span>
+              <span>Task</span>
+            </button>
+          ) : (
+            <button
+              id="pp-subtab-queue"
+              type="button"
+              aria-pressed={currentSubTab === 'action'}
+              onClick={() => setActiveSubTab('action')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '999px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>📋</span>
+              <span>Queue</span>
+            </button>
+          )}
         </div>
       </div>
 
