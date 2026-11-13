@@ -589,53 +589,28 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </button>
 
           {isAdminUser ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setShowImportModal(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '999px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  border: '1px solid var(--border-glass)',
-                  background: 'rgba(11, 13, 16, 0.05)',
-                  color: 'var(--text-main)',
-                  transition: 'all 0.15s ease',
-                }}
-                title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
-              >
-                <span>📤</span>
-                <span>Import Task</span>
-              </button>
-
-              <button
-                type="button"
-                aria-pressed={currentSubTab === 'action'}
-                onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '999px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-                  background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-                  color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <span>⚡</span>
-                <span>Task</span>
-              </button>
-            </>
+            <button
+              type="button"
+              aria-pressed={currentSubTab === 'action'}
+              onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '999px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>⚡</span>
+              <span>Task</span>
+            </button>
           ) : (
             <button
               id="pp-subtab-queue"
