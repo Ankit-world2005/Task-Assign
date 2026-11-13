@@ -51,8 +51,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskForLogs, setSelectedTaskForLogs] = useState(null);
 
-  // Sub-tabs: 'assign' (Task Form), 'action' (Queue Table), or 'check-sheet' (Completed task log)
-  const [activeSubTab, setActiveSubTab] = useState('action');
+  // Sub-tabs: 'assign' (Admin), 'action' (Task Queue), or 'check-sheet' (Completed task log)
+  const [activeSubTab, setActiveSubTab] = useState(isAdminUser ? 'assign' : 'action');
   const currentSubTab = !isAdminUser && activeSubTab === 'assign' ? 'action' : activeSubTab;
 
   const initialCheckSheetForm = () => ({
@@ -554,20 +554,20 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
               {currentSubTab === 'check-sheet'
                 ? 'Log completed payment posting task details and view all team check-sheet records.'
-                : currentSubTab === 'assign'
-                  ? 'Assign payment posting, denials, ERA remittance, and PPT queues.'
-                  : 'Review payment posting queues, update task statuses, and record final times.'}
+                : (currentSubTab === 'action' || isStaff)
+                  ? 'Review payment posting queues, update task statuses, and record final times.'
+                  : 'Assign payment posting, denials, ERA remittance, and PPT queues.'}
             </p>
           </div>
         </div>
 
-        {/* Header Right: Check-Sheet & Task Sub-Tab Buttons */}
+        {/* Header Right: Check-Sheet, Import Task & Task Sub-Tab Toggle Buttons */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             id="pp-subtab-check-sheet"
             type="button"
             aria-pressed={currentSubTab === 'check-sheet'}
-            onClick={() => setActiveSubTab((prev) => (prev === 'check-sheet' ? 'action' : 'check-sheet'))}
+            onClick={() => setActiveSubTab('check-sheet')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -590,10 +590,9 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
 
           {isAdminUser ? (
             <button
-              id="pp-subtab-task"
               type="button"
-              aria-pressed={currentSubTab === 'assign'}
-              onClick={() => setActiveSubTab((prev) => (prev === 'assign' ? 'action' : 'assign'))}
+              aria-pressed={currentSubTab === 'action'}
+              onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -603,12 +602,11 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 cursor: 'pointer',
-                border: currentSubTab === 'assign' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-                background: currentSubTab === 'assign' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-                color: currentSubTab === 'assign' ? '#ffffff' : 'var(--text-main)',
+                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
                 transition: 'all 0.15s ease',
               }}
-              title="Assign Payment Posting Tasks (13 Input Fields Form)"
             >
               <span>⚡</span>
               <span>Task</span>
