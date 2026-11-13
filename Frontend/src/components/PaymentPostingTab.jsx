@@ -51,9 +51,9 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedTaskForLogs, setSelectedTaskForLogs] = useState(null);
 
-  // Sub-tabs: 'assign' (Admin), 'action' (Task Queue), or 'check-sheet' (Completed task log)
-  const [activeSubTab, setActiveSubTab] = useState(isAdminUser ? 'assign' : 'action');
-  const currentSubTab = !isAdminUser && activeSubTab === 'assign' ? 'action' : activeSubTab;
+  // Sub-tabs: 'action' (Task Queue & Manual Assignment), or 'check-sheet' (Completed task log)
+  const [activeSubTab, setActiveSubTab] = useState('action');
+  const currentSubTab = activeSubTab === 'check-sheet' ? 'check-sheet' : 'action';
 
   const initialCheckSheetForm = () => ({
     clinic: '',
@@ -561,7 +561,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
           </div>
         </div>
 
-        {/* Header Right: Check-Sheet, Import Task & Task Sub-Tab Toggle Buttons */}
+        {/* Header Right: Check-Sheet & Task Toggle Buttons */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             id="pp-subtab-check-sheet"
@@ -588,54 +588,37 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
             <span>Check-Sheet</span>
           </button>
 
-          {isAdminUser ? (
-            <button
-              type="button"
-              aria-pressed={currentSubTab === 'action'}
-              onClick={() => setActiveSubTab((prev) => (prev === 'action' ? 'assign' : 'action'))}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>⚡</span>
-              <span>Task</span>
-            </button>
-          ) : (
-            <button
-              id="pp-subtab-queue"
-              type="button"
-              aria-pressed={currentSubTab === 'action'}
-              onClick={() => setActiveSubTab('action')}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '999px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
-                background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
-                color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>📋</span>
-              <span>Queue</span>
-            </button>
-          )}
+          <button
+            id="pp-subtab-task"
+            type="button"
+            aria-pressed={currentSubTab === 'action'}
+            onClick={() => {
+              if (currentSubTab !== 'action') {
+                setActiveSubTab('action');
+              } else {
+                const formEl = document.getElementById('pp-task-assignment-form');
+                if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              borderRadius: '999px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: currentSubTab === 'action' ? '1px solid #2563eb' : '1px solid var(--border-glass)',
+              background: currentSubTab === 'action' ? '#2563eb' : 'rgba(11, 13, 16, 0.05)',
+              color: currentSubTab === 'action' ? '#ffffff' : 'var(--text-main)',
+              transition: 'all 0.15s ease',
+            }}
+            title={isAdminUser ? 'Assign Payment Posting tasks and view queue' : 'View Payment Posting task queue'}
+          >
+            <span>⚡</span>
+            <span>Task</span>
+          </button>
         </div>
       </div>
 
@@ -724,6 +707,245 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
                 <span>📤</span>
                 <span>Import Task</span>
               </button>
+            </div>
+          )}
+
+          {/* Manual Task Assignment Form (Admin Only) */}
+          {isAdminUser && (
+            <div
+              id="pp-task-assignment-form"
+              className="glass-panel"
+              style={{ padding: '1.5rem 2rem', borderRadius: '12px', marginBottom: '20px' }}
+            >
+              <form onSubmit={handleSubmit}>
+                {/* Row 1: Date & Project Details */}
+                <div className="form-section-card" style={{ marginBottom: '1rem' }}>
+                  <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
+                    <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      <span>📅 1. Date & Project Details</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                    {/* 1. Date */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Date *</label>
+                      <DateInput
+                        className="compact-form-input"
+                        value={formData.date}
+                        onChange={(val) => handleChange('date', val)}
+                        required
+                      />
+                    </div>
+
+                    {/* 2. Project Name */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Project Name *</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.project_name}
+                        onChange={(e) => handleChange('project_name', e.target.value)}
+                        placeholder="e.g. Hari Kisan, ARRA, WESTAZ"
+                        required
+                      />
+                    </div>
+
+                    {/* 3. Task type */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Task type</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.task_type}
+                        onChange={(e) => handleChange('task_type', e.target.value)}
+                        placeholder="e.g. Payment Posting, Denials, PPT"
+                      />
+                    </div>
+
+                    {/* 4. File Name */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">File Name</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.file_name}
+                        onChange={(e) => handleChange('file_name', e.target.value)}
+                        placeholder="e.g. Batch_01.pdf"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: File Counts, Denials & Remaining */}
+                <div className="form-section-card" style={{ marginBottom: '1rem' }}>
+                  <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
+                    <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      <span>📁 2. File Allocation & Denials</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                    {/* 5. Number of File for PPT */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Number of File for PPT</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.num_files_ppt}
+                        onChange={(e) => handleChange('num_files_ppt', e.target.value)}
+                        placeholder="e.g. 5"
+                      />
+                    </div>
+
+                    {/* 6. DENIALS SS */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">DENIALS SS</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.denials_ss}
+                        onChange={(e) => handleChange('denials_ss', e.target.value)}
+                        placeholder="e.g. Done, Pending, 5 denials"
+                      />
+                    </div>
+
+                    {/* 7. Remaining */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Remaining</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.remaining}
+                        onChange={(e) => handleChange('remaining', e.target.value)}
+                        placeholder="e.g. 0, 2"
+                      />
+                    </div>
+
+                    {/* 8. Approx Time Min */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Approx Time Min</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.approx_time_min}
+                        onChange={(e) => handleChange('approx_time_min', e.target.value)}
+                        placeholder="e.g. 45"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 3: Final Time, Remarks, Assignment & QA Details */}
+                <div className="form-section-card" style={{ marginBottom: '1.25rem' }}>
+                  <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
+                    <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      <span>👤 3. Time, Remarks & Assignment Details</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                    {/* 9. Final Time by User */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Final Time by User</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.final_time_user}
+                        onChange={(e) => handleChange('final_time_user', e.target.value)}
+                        placeholder="e.g. 40 min"
+                      />
+                    </div>
+
+                    {/* 10. Remarks */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Remarks</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.remarks}
+                        onChange={(e) => handleChange('remarks', e.target.value)}
+                        placeholder="Enter remarks, instructions, batch notes..."
+                      />
+                    </div>
+
+                    {/* 11. Assigned User */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Assigned User *</label>
+                      <select
+                        className="compact-form-select"
+                        value={selectedAssigneeId}
+                        onChange={(e) => handleChange('assignee_id', e.target.value)}
+                        required
+                      >
+                        <option value="">Select Employee...</option>
+                        {paymentPostingUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.full_name || u.username} ({u.profile?.role === 'admin' ? 'Admin' : 'Payment Posting'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 12. Sup QA */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Sup QA</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.sup_qa}
+                        onChange={(e) => handleChange('sup_qa', e.target.value)}
+                        placeholder="e.g. Approved, Pending QA"
+                      />
+                    </div>
+
+                    {/* 13. Time By Manish */}
+                    <div className="compact-form-group">
+                      <label className="compact-form-label">Time By Manish</label>
+                      <input
+                        type="text"
+                        className="compact-form-input"
+                        value={formData.time_by_manish}
+                        onChange={(e) => handleChange('time_by_manish', e.target.value)}
+                        placeholder="e.g. 10 min"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() =>
+                      setFormData({
+                        date: new Date().toISOString().split('T')[0],
+                        project_name: '',
+                        task_type: 'Payment Posting',
+                        file_name: '',
+                        num_files_ppt: '',
+                        denials_ss: '',
+                        remaining: '',
+                        approx_time_min: '',
+                        final_time_user: '',
+                        remarks: '',
+                        assignee_id: '',
+                        sup_qa: '',
+                        time_by_manish: '',
+                      })
+                    }
+                    style={{ padding: '10px 18px', fontSize: '0.9rem' }}
+                  >
+                    Clear Form
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={submitting}
+                    style={{ minWidth: '180px', padding: '10px 22px', fontSize: '0.92rem', fontWeight: 600 }}
+                  >
+                    {submitting ? 'Assigning...' : 'Assign Payment Posting Task'}
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 
@@ -846,20 +1068,8 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
               </button>
             )}
 
-            {/* Export CSV & Import Task buttons */}
+            {/* Export CSV button (Duplicate Import Task button removed from here) */}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {isAdminUser && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => setShowImportModal(true)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', fontSize: '0.82rem' }}
-                  title="Import Payment Posting tasks from Excel (.xlsx, .xls) or CSV"
-                >
-                  <span>📤</span>
-                  <span>Import Task</span>
-                </button>
-              )}
               <button
                 type="button"
                 className="btn-secondary"
@@ -995,229 +1205,7 @@ export const PaymentPostingTab = ({ setCurrentTab, onSelectStaff }) => {
       )}
 
       {/* ============================================================ */}
-      {/* SUB-TAB 2: TASK ASSIGN (THE 13 COLUMNS ASSIGNMENT FORM, ADMIN ONLY) */}
-      {/* ============================================================ */}
-      {isAdminUser && currentSubTab === 'assign' && (
-        <div className="glass-panel" style={{ padding: '2rem 2.5rem', borderRadius: '12px' }}>
-          {/* The 13 Columns Form */}
-          <form onSubmit={handleSubmit}>
-            {/* Row 1: Date & Project Details */}
-            <div className="form-section-card" style={{ marginBottom: '1rem' }}>
-              <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
-                <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
-                  <span>📅 1. Date & Project Details</span>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
-                {/* 1. Date */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Date *</label>
-                  <DateInput
-                    className="compact-form-input"
-                    value={formData.date}
-                    onChange={(val) => handleChange('date', val)}
-                    required
-                  />
-                </div>
-
-                {/* 2. Project Name */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Project Name *</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.project_name}
-                    onChange={(e) => handleChange('project_name', e.target.value)}
-                    placeholder="e.g. Hari Kisan, ARRA, WESTAZ"
-                    required
-                  />
-                </div>
-
-                {/* 3. Task type */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Task type</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.task_type}
-                    onChange={(e) => handleChange('task_type', e.target.value)}
-                    placeholder="e.g. Payment Posting, Denials, PPT"
-                  />
-                </div>
-
-                {/* 4. File Name */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">File Name</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.file_name}
-                    onChange={(e) => handleChange('file_name', e.target.value)}
-                    placeholder="e.g. Batch_01.pdf"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 2: File Counts, Denials & Remaining */}
-            <div className="form-section-card" style={{ marginBottom: '1rem' }}>
-              <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
-                <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
-                  <span>📁 2. File Allocation & Denials</span>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
-                {/* 5. Number of File for PPT */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Number of File for PPT</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.num_files_ppt}
-                    onChange={(e) => handleChange('num_files_ppt', e.target.value)}
-                    placeholder="e.g. 5"
-                  />
-                </div>
-
-                {/* 6. DENIALS SS */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">DENIALS SS</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.denials_ss}
-                    onChange={(e) => handleChange('denials_ss', e.target.value)}
-                    placeholder="e.g. Done, Pending, 5 denials"
-                  />
-                </div>
-
-                {/* 7. Remaining */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Remaining</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.remaining}
-                    onChange={(e) => handleChange('remaining', e.target.value)}
-                    placeholder="e.g. 0, 2"
-                  />
-                </div>
-
-                {/* 8. Approx Time Min */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Approx Time Min</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.approx_time_min}
-                    onChange={(e) => handleChange('approx_time_min', e.target.value)}
-                    placeholder="e.g. 45"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 3: Final Time, Remarks, Assignment & QA Details (Columns 9–13 in exact Excel order) */}
-            <div className="form-section-card" style={{ marginBottom: '1.5rem' }}>
-              <div className="form-section-header" style={{ marginBottom: '0.75rem' }}>
-                <div className="form-section-title" style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--ink)' }}>
-                  <span>👤 3. Time, Remarks & Assignment Details</span>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
-                {/* 9. Final Time by User */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Final Time by User</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.final_time_user}
-                    onChange={(e) => handleChange('final_time_user', e.target.value)}
-                    placeholder="e.g. 40 min"
-                  />
-                </div>
-
-                {/* 10. Remarks */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Remarks</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.remarks}
-                    onChange={(e) => handleChange('remarks', e.target.value)}
-                    placeholder="Enter remarks, instructions, batch notes..."
-                  />
-                </div>
-
-                {/* 11. Assigned User */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Assigned User *</label>
-                  <select
-                    className="compact-form-select"
-                    value={selectedAssigneeId}
-                    onChange={(e) => handleChange('assignee_id', e.target.value)}
-                    required
-                  >
-                    <option value="">Select Employee...</option>
-                    {paymentPostingUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name || u.username} ({u.profile?.role === 'admin' ? 'Admin' : 'Payment Posting'})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 12. Sup QA */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Sup QA</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.sup_qa}
-                    onChange={(e) => handleChange('sup_qa', e.target.value)}
-                    placeholder="e.g. Approved, Pending QA"
-                  />
-                </div>
-
-                {/* 13. Time By Manish */}
-                <div className="compact-form-group">
-                  <label className="compact-form-label">Time By Manish</label>
-                  <input
-                    type="text"
-                    className="compact-form-input"
-                    value={formData.time_by_manish}
-                    onChange={(e) => handleChange('time_by_manish', e.target.value)}
-                    placeholder="e.g. 10 min"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setActiveSubTab('action')}
-                style={{ padding: '10px 18px', fontSize: '0.9rem' }}
-              >
-                Cancel & View Action Tab
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-                disabled={submitting}
-                style={{ minWidth: '180px', padding: '10px 22px', fontSize: '0.92rem', fontWeight: 600 }}
-              >
-                {submitting ? 'Assigning...' : 'Assign Payment Posting Task'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* SUB-TAB 3: CHECK-SHEET (17-COLUMN COMPLETED TASK LEDGER)     */}
+      {/* SUB-TAB 2: CHECK-SHEET (17-COLUMN COMPLETED TASK LEDGER)     */}
       {/* ============================================================ */}
       {currentSubTab === 'check-sheet' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
